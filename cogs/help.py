@@ -3,21 +3,23 @@
 from discord.ext import commands
 import discord
 
-class LispHelpCommand(commands.HelpCommand):
+class RocketHelpCommand(commands.HelpCommand):
     '''This is a help command that uses embeds, adapted from 
     https://gist.github.com/Rapptz/31a346ed1eb545ddeb0d451d81a60b3b.
     '''
 
-    COLOR = discord.Color(0xf0f0f0)
+    def __init__(self, color, *args, **kwargs):
+        self.color = color
+        super().__init__(*args, **kwargs)
 
     def get_ending_note(self):
-        return f"Use {self.clean_prefix}{self.invoked_with} command {self.clean_suffix} for more help on a command."
+        return f"Use '{self.clean_prefix}{self.invoked_with}' command for more help on a command."
 
     def get_command_signature(self, command):
         return f"{command.qualified_name} {command.signature}"
 
     async def send_bot_help(self, mapping):
-        embed = discord.Embed(color=self.COLOR, title="Command Reference")
+        embed = discord.Embed(color=self.color, title="Command Reference")
         description = self.context.bot.description
         if description:
             embed.description = description
@@ -26,9 +28,9 @@ class LispHelpCommand(commands.HelpCommand):
             name = "Built-ins" if cog is None else cog.qualified_name
             filtered = await self.filter_commands(commands, sort=True)
             if filtered:
-                value = '\u2002'.join(c.name for c in commands)
+                value = '\u2002'.join(f"`{c.name}`" for c in commands)
                 if cog and cog.description:
-                    value = f"{cog.description}\n{value}"
+                    value = f"{cog.description.strip()}\n{value}"
 
                 embed.add_field(name=name, value=value)
 
@@ -63,10 +65,10 @@ class LispHelpCommand(commands.HelpCommand):
     send_command_help = send_group_help
 
 class Help(commands.Cog):
-    '''Implementation of custom help commands.'''
+    '''The help command.'''
     def __init__(self, bot):
         self._original_help_command = bot.help_command
-        bot.help_command = LispHelpCommand()
+        bot.help_command = RocketHelpCommand(bot.color)
         bot.help_command.cog = self
 
     def cog_unload(self):

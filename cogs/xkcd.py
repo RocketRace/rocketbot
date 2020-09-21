@@ -10,10 +10,7 @@ import asyncio
 import random
 
 class Xkcd(commands.Cog):
-    '''Commands for interfacing with XKCD.
-    
-    See https://xkcd.com/json.html for XKCD's API reference.
-    '''
+    '''Commands for interfacing with XKCD.'''
 
     def __init__(self, bot):
         self.bot = bot
@@ -33,7 +30,7 @@ class Xkcd(commands.Cog):
     async def xkcd(self, ctx, *, number: Optional[int]):
         if number is None:
             number = random.randint(1, self.latest_number)
-        if number > self.latest_number:
+        elif number > self.latest_number:
             return await ctx.boom(f"Number too big. Max: `{self.latest_number}`")
         await self.query_xkcd(ctx, number)
     
@@ -72,12 +69,6 @@ class Xkcd(commands.Cog):
         if isinstance(error, ValueError):
             await ctx.boom("")
         raise error
-
-    @commands.command()
-    async def a(self, ctx):
-        file = discord.File(".gitignore")
-        embed = discord.Embed()
-        await ctx.send("test", embed=embed, file=file)
 
 def setup(bot):
     bot.add_cog(Xkcd(bot))
