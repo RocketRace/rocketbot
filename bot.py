@@ -44,7 +44,7 @@ class Bot(commands.Bot):
     def __init__(self, prefix, **kwargs):
         self.color = kwargs.get("color") or discord.Color.default()
         db = kwargs.get("db")
-        
+
         super().__init__(command_prefix=commands.when_mentioned_or(prefix), **kwargs)
         for cog in config.cogs:
             try:
@@ -66,6 +66,6 @@ class Bot(commands.Bot):
     async def get_context(self, message, *, cls=Context):
         return await super().get_context(message, cls=cls)
 
-bot = Bot("rocket ", color=discord.Color(0xe0e0f0), db="rocket.db")
+bot = Bot("rocket ", color=discord.Color(0xe0e0f0), db=config.db)
 
 bot.run(config.token)
