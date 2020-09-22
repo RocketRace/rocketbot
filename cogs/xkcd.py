@@ -39,7 +39,7 @@ class Xkcd(commands.Cog):
         if number is None:
             number = random.randint(1, self.latest_number)
         elif number > self.latest_number:
-            return await ctx.boom(f"Number too big. Max: `{self.latest_number}`")
+            raise ValueError(number)
         await self.query_xkcd(ctx, number)
     
     @xkcd.command()
@@ -75,7 +75,8 @@ class Xkcd(commands.Cog):
     @xkcd.error
     async def xkcd_error(self, ctx, error):
         if isinstance(error, ValueError):
-            await ctx.boom("")
+            number ,= error.args
+            return await ctx.boom(f"Number too big (`{number}`). Max: `{self.latest_number}`")
         raise error
 
 def setup(bot):
