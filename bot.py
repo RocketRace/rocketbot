@@ -21,11 +21,11 @@ class Context(commands.Context):
         '''Reacts with a rocket emoji.'''
         await self.react("\N{ROCKET}")
 
-    async def boom(self, message = None):
+    async def boom(self, message = None, **kwargs):
         '''Reacts with a boom emoji, and sends an optional error message.'''
         await self.react("\N{COLLISION SYMBOL}")
         if message is not None:
-            await self.send(message)
+            await self.send(message, **kwargs)
     
     @property
     def session(self):
@@ -66,6 +66,11 @@ class Bot(commands.Bot):
     async def get_context(self, message, *, cls=Context):
         return await super().get_context(message, cls=cls)
 
-bot = Bot("rocket ", color=discord.Color(0xe0e0f0), db=config.db)
+bot = Bot(
+    "rocket ",
+    color=discord.Color(0xe0e0f0),
+    db=config.db,
+    allowed_mentions=discord.AllowedMentions(everyone=False)
+)
 
 bot.run(config.token)
