@@ -28,3 +28,4 @@ var/
 config.py
 .vscode/
 .venv/
+rocket.db

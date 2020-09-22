@@ -4,8 +4,9 @@
 from discord.ext import commands
 import discord
 import aiohttp
+import aiosqlite
+import asyncio
 import config
-
 class Context(commands.Context):
     '''A custom command context.'''
     async def react(self, emoji):
@@ -26,13 +27,14 @@ class Context(commands.Context):
         if message is not None:
             await self.send(message)
     
-    async def error(self, original):
-        await self.rocket(boom=True)
-
     @property
-    def cs(self):
+    def session(self):
         return self.bot.session
     
+    @property
+    def db(self):
+        return self.bot.db
+
     @property
     def color(self):
         return self.bot.color
@@ -40,14 +42,22 @@ class Context(commands.Context):
 class Bot(commands.Bot):
     '''Custom bot class with convenience methods and attributes.'''
     def __init__(self, prefix, **kwargs):
-        self.session = aiohttp.ClientSession()
         self.color = kwargs.get("color") or discord.Color.default()
+        db = kwargs.get("db")
+        
         super().__init__(command_prefix=commands.when_mentioned_or(prefix), **kwargs)
         for cog in config.cogs:
             try:
                 self.load_extension(cog)
             except Exception as exc:
                 print(f"Could not load extension {cog} due to {exc.__class__.__name__}: {exc}")
+
+        self.loop.create_task(self.connect_sessions(db=db))
+
+    async def connect_sessions(self, *, db):
+        self.db = await aiosqlite.connect(db)
+        self.session = aiohttp.ClientSession()
+        await self.dispatch("initialized")
 
     async def on_ready(self):
         print(f"Logged in as {self.user} (ID: {self.user.id})")
@@ -56,6 +66,6 @@ class Bot(commands.Bot):
     async def get_context(self, message, *, cls=Context):
         return await super().get_context(message, cls=cls)
 
-bot = Bot("rocket ", color=discord.Color(0xe0e0f0))
+bot = Bot("rocket ", color=discord.Color(0xe0e0f0), db="rocket.db")
 
 bot.run(config.token)

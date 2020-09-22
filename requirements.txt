@@ -1,2 +1,3 @@
 discord.py>=1.4.1
 aiohttp # required by discord.py but included here for explicitness
+aiosqlite

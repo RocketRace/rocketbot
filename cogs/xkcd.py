@@ -15,16 +15,24 @@ class Xkcd(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.latest_number = 1
+    
+    @commands.Cog.listener()
+    async def on_initialized(self): # Called once bot.session and bot.db are ready
         self.update_latest_number.start()
 
     def cog_unload(self):
         self.update_latest_number.cancel()
     
-    @tasks.loop(hours=6)
+    @tasks.loop(hours=1)
     async def update_latest_number(self):
         async with self.bot.session.get("https://xkcd.com/info.0.json") as resp:
             data = json.loads(await resp.text())
+            if data["num"] > self.latest_number:
+                await self.send_notifications()
             self.latest_number = data["num"]
+
+    async def send_notifications(self):
+        ...
 
     @commands.group(invoke_without_command=True)
     async def xkcd(self, ctx, *, number: Optional[int]):
@@ -45,7 +53,7 @@ class Xkcd(commands.Cog):
         else:
             path = f"https://xkcd.com/{number}/info.0.json"
         
-        async with ctx.cs.get(path) as resp:
+        async with ctx.session.get(path) as resp:
             if resp.status != 200:
                 raise ValueError(number)
             

@@ -14,7 +14,8 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
     @commands.command()
     async def logout(self, ctx):
-        await ctx.cs.close()
+        await ctx.session.close()
+        await ctx.db.close()
         await ctx.rocket()
         await self.bot.logout()
     
