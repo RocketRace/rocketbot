@@ -74,6 +74,7 @@ class Xkcd(commands.Cog):
 
     @xkcd.error
     async def xkcd_error(self, ctx, error):
+        error = getattr(error, "original", error)
         if isinstance(error, ValueError):
             number ,= error.args
             return await ctx.boom(f"Number too big (`{number}`). Max: `{self.latest_number}`")

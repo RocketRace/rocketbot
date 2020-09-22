@@ -57,7 +57,7 @@ class Bot(commands.Bot):
     async def connect_sessions(self, *, db):
         self.db = await aiosqlite.connect(db)
         self.session = aiohttp.ClientSession()
-        await self.dispatch("initialized")
+        self.dispatch("initialized")
 
     async def on_ready(self):
         print(f"Logged in as {self.user} (ID: {self.user.id})")
