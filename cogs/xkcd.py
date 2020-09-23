@@ -77,7 +77,9 @@ class Xkcd(commands.Cog):
         error = getattr(error, "original", error)
         if isinstance(error, ValueError):
             number ,= error.args
-            return await ctx.boom(f"Number too big (`{number}`). Max: `{self.latest_number}`")
+            return await ctx.boom(
+                f"Number too big (`{number}`). Max: `{self.latest_number}` (use `latest` to get the latest comic)"
+            )
         raise error
 
 def setup(bot):

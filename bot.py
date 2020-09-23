@@ -24,9 +24,11 @@ class Context(commands.Context):
     async def boom(self, message = None, **kwargs):
         '''Reacts with a boom emoji, and sends an optional error message.'''
         await self.react("\N{COLLISION SYMBOL}")
-        if message is not None:
-            await self.send(message, **kwargs)
+        await self.send(message, **kwargs)
     
+    async def log(self, **kwargs):
+        await self.bot.log(self, **kwargs)
+
     @property
     def session(self):
         return self.bot.session
@@ -43,7 +45,9 @@ class Bot(commands.Bot):
     '''Custom bot class with convenience methods and attributes.'''
     def __init__(self, prefix, **kwargs):
         self.color = kwargs.get("color") or discord.Color.default()
+        self.webhook_id = kwargs.pop("webhook_id")
         db = kwargs.get("db")
+        self.cog_names = config.cogs
 
         super().__init__(command_prefix=commands.when_mentioned_or(prefix), **kwargs)
         for cog in config.cogs:
@@ -70,6 +74,7 @@ bot = Bot(
     "rocket ",
     color=discord.Color(0xe0e0f0),
     db=config.db,
+    webhook_id=config.webhook_id,
     allowed_mentions=discord.AllowedMentions(everyone=False)
 )
 

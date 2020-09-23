@@ -2,6 +2,7 @@
 
 from discord.ext import commands
 import discord
+import logging
 
 class Errors(commands.Cog):
     '''A custom error handler for unhandled exceptions.'''
@@ -12,6 +13,7 @@ class Errors(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         error = getattr(error, "original", error)
+        await ctx.log(level=logging.ERROR, exc=error)
         
         ignored = (commands.CommandNotFound, commands.NotOwner)
         if isinstance(error, ignored):
