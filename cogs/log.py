@@ -35,6 +35,7 @@ class Logging(commands.Cog):
             name=f"{ctx.author.name} {ctx.author.id}",
             icon_url=str(ctx.author.avatar_url)
         )
+        embed.timestamp = ctx.message.created_at
         msg = f"Message: {ctx.message.id}\n"
         msg += f"[Jump link]({ctx.message.jump_url})\n"
         if ctx.guild:
@@ -69,7 +70,11 @@ class Logging(commands.Cog):
             return
         for i in range(0, len(self.buffer), 10):
             embeds = self.buffer[i:i+9]
-            await self.webhook.send(embeds=embeds)
+            await self.webhook.send(
+                embeds=embeds, 
+                username=f"{self.bot.user.name} logs",
+                avatar_url=str(self.bot.user.avatar_url)
+            )
         self.buffer.clear()
         
 def setup(bot: commands.Bot):
