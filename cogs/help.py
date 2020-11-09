@@ -2,77 +2,55 @@
 
 from discord.ext import commands
 import discord
+import asyncio
+from typing import *
+from bot import Bot, Context
 
-class RocketHelpCommand(commands.HelpCommand):
-    '''This is a help command that uses embeds, adapted from 
-    https://gist.github.com/Rapptz/31a346ed1eb545ddeb0d451d81a60b3b.
-    '''
-
-    def __init__(self, color, *args, **kwargs):
+class RocketHelpCommand(commands.MinimalHelpCommand):
+    '''A help command with a silly gimmick.'''
+    context: Context
+    def __init__(self, color: discord.Color, *args, **kwargs):
         self.color = color
         super().__init__(*args, **kwargs)
 
-    def get_ending_note(self):
-        return f"Use '{self.clean_prefix}{self.invoked_with}' command for more help on a command."
-
-    def get_command_signature(self, command):
-        return f"{command.qualified_name} {command.signature}"
-
-    async def send_bot_help(self, mapping):
-        embed = discord.Embed(color=self.color, title="Command Reference")
-        description = self.context.bot.description
-        if description:
-            embed.description = description
-        
-        for cog, commands in mapping.items():
-            name = "Built-ins" if cog is None else cog.qualified_name
-            filtered = await self.filter_commands(commands, sort=True)
-            if filtered:
-                value = '\u2002'.join(f"`{c.name}`" for c in commands)
-                if cog and cog.description:
-                    value = f"{cog.description.strip()}\n{value}"
-
-                embed.add_field(name=name, value=value)
-
-        embed.set_footer(text=self.get_ending_note())
-        await self.get_destination().send(embed=embed)
-
-    async def send_cog_help(self, cog):
-        embed = discord.Embed(title=f"{cog.qualified_name} Commands", colour=self.COLOUR)
-        if cog.description:
-            embed.description = cog.description
-
-        filtered = await self.filter_commands(cog.get_commands(), sort=True)
-        for command in filtered:
-            embed.add_field(name=self.get_command_signature(command), value=command.short_doc or "...", inline=False)
-
-        embed.set_footer(text=self.get_ending_note())
-        await self.get_destination().send(embed=embed)
-    
-    async def send_group_help(self, group):
-        embed = discord.Embed(title=group.qualified_name, colour=self.COLOUR)
-        if group.help:
-            embed.description = group.help
-
-        if isinstance(group, commands.Group):
-            filtered = await self.filter_commands(group.commands, sort=True)
-            for command in filtered:
-                embed.add_field(name=self.get_command_signature(command), value=command.short_doc or "...", inline=False)
-
-        embed.set_footer(text=self.get_ending_note())
-        await self.get_destination().send(embed=embed)
-
-    send_command_help = send_group_help
+    async def send_pages(self) -> None:
+        '''Stupid gag'''
+        ctx = self.context
+        try:
+            await ctx.author.send("help")
+        except discord.HTTPException:
+            message = await ctx.boom("I can't send help to you. Are you blocking DMs, or — me?")
+        else:
+            await ctx.rocket()
+            message = await ctx.send("Help has been sent to your DMs!")
+            await asyncio.sleep(1)
+            await ctx.author.trigger_typing()
+            await asyncio.sleep(3)
+            await ctx.author.send("no seriously")
+            await asyncio.sleep(1)
+            await ctx.author.trigger_typing()
+            await asyncio.sleep(2)
+            await ctx.author.send("help me please")
+            if len(self.paginator.pages) == 1:
+                # Ideally this is always the case
+                await message.edit(content=self.paginator.pages[0])
+            else:
+                await message.delete()
+                destination = self.get_destination()
+                for page in self.paginator.pages:
+                    await destination.send(page)
 
 class Help(commands.Cog):
-    '''The help command.'''
-    def __init__(self, bot):
+    '''The help command'''
+    def __init__(self, bot: Bot):
+        self.bot = bot
         self._original_help_command = bot.help_command
         bot.help_command = RocketHelpCommand(bot.color)
         bot.help_command.cog = self
+        bot.help_command.help = "Sends help"
 
     def cog_unload(self):
         self.bot.help_command = self._original_help_command
 
-def setup(bot):
+def setup(bot: Bot):
     bot.add_cog(Help(bot))
