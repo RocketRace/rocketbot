@@ -28,4 +28,7 @@ var/
 config.py
 .vscode/
 .venv/
+.mypy_cache/
+# sqlite
 rocket.db
+rocket.db-journal

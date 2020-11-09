@@ -5,17 +5,15 @@ from discord.ext import commands
 import discord
 import aiohttp
 import aiosqlite
-import asyncio
+import contextlib
+from typing import *
 import config
 class Context(commands.Context):
     '''A custom command context.'''
     async def react(self, emoji):
         '''Adds a reaction to this message.'''
-        try:
+        with contextlib.suppress(discord.HTTPException):
             await self.message.add_reaction(emoji)
-        except discord.HTTPException:
-            # This just means that users get no feedback
-            pass
 
     async def rocket(self):
         '''Reacts with a rocket emoji.'''
@@ -37,41 +35,57 @@ class Context(commands.Context):
     def db(self):
         return self.bot.db
 
+    def cursor(self):
+        return self.bot.cursor()
+
     @property
     def color(self):
         return self.bot.color
 
 class Bot(commands.Bot):
     '''Custom bot class with convenience methods and attributes.'''
-    def __init__(self, prefix, **kwargs):
-        self.color = kwargs.get("color") or discord.Color.default()
-        self.webhook_id = kwargs.pop("webhook_id")
-        db = kwargs.get("db")
+    def __init__(self, 
+        prefixes: List[str], 
+        *, 
+        db: str, 
+        webhook_id: int, 
+        color: discord.Color=discord.Color.default(), 
+        **kwargs
+    ):
+        self.exit_code = 0
+        self.color = color
+        self.webhook_id = webhook_id
         self.cog_names = config.cogs
 
-        super().__init__(command_prefix=commands.when_mentioned_or(prefix), **kwargs)
+        super().__init__(command_prefix=commands.when_mentioned_or(*prefixes), **kwargs)
         for cog in config.cogs:
             try:
                 self.load_extension(cog)
             except Exception as exc:
                 print(f"Could not load extension {cog} due to {exc.__class__.__name__}: {exc}")
 
+        # Connection acquisition must be asynchronous
         self.loop.create_task(self.connect_sessions(db=db))
 
-    async def connect_sessions(self, *, db):
+    async def connect_sessions(self, *, db: str):
         self.db = await aiosqlite.connect(db)
         self.session = aiohttp.ClientSession()
         self.dispatch("initialized")
+
+    def cursor(self):
+        '''Obtains a cursor once awaited.'''
+        return self.db.cursor()
 
     async def on_ready(self):
         print(f"Logged in as {self.user} (ID: {self.user.id})")
         print("Invite:", discord.utils.oauth_url(self.user.id))
     
-    async def get_context(self, message, *, cls=Context):
-        return await super().get_context(message, cls=cls)
+    # Hook for custom context
+    async def get_context(self, message: discord.Message, *, cls=commands.Context):
+        return await super().get_context(message, cls=Context)
 
 bot = Bot(
-    "rocket ",
+    ["rocket ", "Rocket "], # auto-capitalization aware
     color=discord.Color(0xe0e0f0),
     db=config.db,
     webhook_id=config.webhook_id,
