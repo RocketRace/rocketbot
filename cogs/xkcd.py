@@ -114,16 +114,20 @@ class Xkcd(commands.Cog):
             rows = await cur.fetchall()
         for (ID,) in rows:
             with contextlib.suppress(discord.Forbidden):
-                user = await self.bot.fetch_user(ID)
                 for num in range(self.latest_number + 1, latest_number + 1):
                     embed = await self.query_xkcd(num)
-                    await user.send(
+                    # Raw methods are used here due to a lack of member cache
+                    # If `members` intent is enabled, `m = get_member(ID)` and `m.send(...)` may be used
+                    channel = await self.bot.http.start_private_message(ID)
+                    chan_id = channel["id"]
+                    await self.bot.http.send_message(
+                        chan_id,
                         "\n".join([
                             f"XKCD #`{num}`",
                             "*You're being reminded because you opted in using `rocket opt in`.*",
                             "*To opt out from reminders, use `rocket opt out`."
                         ]),
-                        embed=embed
+                        embed=embed.to_dict()
                     )
 
     @commands.group(invoke_without_command=True)
@@ -132,6 +136,8 @@ class Xkcd(commands.Cog):
         
         Provide `number` to view a specific comic, or omit it to view a random one.
         '''
+        chan = await self.bot.http.start_private_message(156021301654454272)
+        print(chan)
         if number is None:
             number = random.randint(1, self.latest_number)
         elif number > self.latest_number:

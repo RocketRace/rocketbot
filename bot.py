@@ -89,7 +89,12 @@ bot = Bot(
     color=discord.Color(0xe0e0f0),
     db=config.db,
     webhook_id=config.webhook_id,
-    allowed_mentions=discord.AllowedMentions(everyone=False)
+    allowed_mentions=discord.AllowedMentions(everyone=False),
+    intents=discord.Intents(
+        guilds=True,
+        messages=True,
+        reactions=True
+    )
 )
 
 bot.run(config.token)
