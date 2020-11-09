@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from bot import Bot, Context
 from discord.ext import commands
 import discord
 import logging
@@ -7,21 +8,21 @@ import logging
 class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     '''Bot administration commands.'''
 
-    def __init__(self, bot):
+    def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def cog_check(self, ctx):
+    async def cog_check(self, ctx: Context):
         return await self.bot.is_owner(ctx.author)
 
     @commands.command()
-    async def logout(self, ctx):
+    async def logout(self, ctx: Context):
         await ctx.session.close()
         await ctx.db.close()
         await ctx.rocket()
         await self.bot.logout()
     
     @commands.command()
-    async def load(self, ctx, *cogs):
+    async def load(self, ctx: Context, *cogs):
         if len(cogs) == 0:
             for cog in self.bot.cog_names:
                 self.bot.reload_extension(cog)
@@ -36,9 +37,9 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
     @commands.command()
     async def log(self, ctx):
-        for i in range(10):
+        for _ in range(10):
             await ctx.log()
         await ctx.rocket()
 
-def setup(bot):
+def setup(bot: Bot):
     bot.add_cog(Admin(bot))
