@@ -4,6 +4,7 @@ from discord.ext import commands, tasks
 import discord
 import logging
 import datetime
+import traceback
 
 class Logging(commands.Cog):
     '''A custom webhook log.'''
@@ -19,6 +20,7 @@ class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.log = self.log
+        self.bot.log_raw = self.log_raw
         self.buffer = []
     
     @commands.Cog.listener()
@@ -47,19 +49,36 @@ class Logging(commands.Cog):
         embed.add_field(name="Context", value=msg)
         embed.add_field(name="Message contents", value=f"`{ctx.message.content[:1000]}`")
 
-    def populate_log(self, embed, message, exc):
+    def populate_log(self, embed: discord.Embed, title = None, message = None, exc: BaseException = None):
         if exc is not None:
-            embed.title = "Uncaught exception"
+            embed.title = "Uncaught Exception"
+            embed.add_field(
+                name=f"{exc.__class__.__name__}: {str(exc)}",
+                value="".join(traceback.format_exception(type(exc), exc))
+            )
+        else:
+            embed.title = title
+        embed.description = message
 
-    async def log(self, ctx, *, level = logging.DEBUG, message = None, exc = None):
+    async def append_log(self, embed, level = logging.DEBUG):
+        self.buffer.append(embed)
+        if len(self.buffer) >= 10 or level >= logging.ERROR:
+            await self.flush_buffer()
+
+    async def log(self, ctx, *, level = logging.DEBUG, title = None, message = None, exc = None):
         embed = discord.Embed(
             color=self.COLORS[level],
         )
         self.provide_context(embed, ctx)
+        self.populate_log(embed, title, message, exc)
+        await self.append_log(embed, level)
+
+    async def log_raw(self, *, level = logging.DEBUG, message = None, exc = None):
+        embed = discord.Embed(
+            color=self.COLORS[level],
+        )
         self.populate_log(embed, message, exc)
-        self.buffer.append(embed)
-        if len(self.buffer) >= 10 or level >= logging.ERROR:
-            await self.flush_buffer()
+        await self.append_log(embed, level)
 
     @tasks.loop(minutes=1)
     async def flush_loop(self):

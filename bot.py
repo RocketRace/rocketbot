@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''A bot for my personal use.'''
+from __future__ import annotations
 from discord.ext import commands
 import discord
 import aiohttp
@@ -10,6 +11,7 @@ from typing import *
 import config
 class Context(commands.Context):
     '''A custom command context.'''
+    bot: Bot
     async def react(self, emoji):
         '''Adds a reaction to this message.'''
         with contextlib.suppress(discord.HTTPException):
@@ -44,6 +46,14 @@ class Context(commands.Context):
 
 class Bot(commands.Bot):
     '''Custom bot class with convenience methods and attributes.'''
+    
+    exit_code: int
+    color: discord.Color
+    webhook_id: int
+    cog_names: List[str]
+    log: Optional[Callable]
+    log_raw: Optional[Callable]
+
     def __init__(self, 
         prefixes: List[str], 
         *, 
@@ -56,6 +66,8 @@ class Bot(commands.Bot):
         self.color = color
         self.webhook_id = webhook_id
         self.cog_names = config.cogs
+        self.log = None
+        self.log_raw = None
 
         super().__init__(command_prefix=commands.when_mentioned_or(*prefixes), **kwargs)
         for cog in config.cogs:
@@ -93,7 +105,8 @@ bot = Bot(
     intents=discord.Intents(
         guilds=True,
         messages=True,
-        reactions=True
+        reactions=True,
+        members=True
     )
 )
 
