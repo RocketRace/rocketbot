@@ -14,12 +14,12 @@ class Errors(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: Context, error: commands.CommandInvokeError):
         error = getattr(error, "original", error)
-        await ctx.log(level=logging.ERROR, exc=error)
         
         ignored = (commands.CommandNotFound, commands.NotOwner)
         if isinstance(error, ignored):
             return
 
+        await ctx.log(level=logging.ERROR, exc=error)
         msg = "".join([
             error.__class__.__name__,
             str(error)

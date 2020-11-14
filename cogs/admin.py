@@ -19,8 +19,14 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)):
 
     async def after_leave(self, guild: discord.Guild, *, new: bool):
         await self.bot.log_raw(
-            level=logging.WARN,
+            level=logging.DEBUG,
             message=f"Guild `{guild.name}` (ID: {guild.id}`) left automatically. Guild count: {len(self.bot.guilds)}"
+        )
+    
+    async def on_guild_limit_reached(self, guild: discord.Guild):
+        await self.bot.log_raw(
+            level=logging.WARN,
+            message=f"Guild `{guild.name}` (ID: {guild.id}`) left automatically. Guild count: {len(self.bot.guilds)}!"
         )
 
     async def cog_check(self, ctx: Context):

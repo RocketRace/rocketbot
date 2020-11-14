@@ -6,6 +6,34 @@ import logging
 import datetime
 import traceback
 
+def provide_context(embed, ctx):
+    embed.set_author(
+        name=f"{ctx.author.name} {ctx.author.id}",
+        icon_url=str(ctx.author.avatar_url)
+    )
+    embed.timestamp = ctx.message.created_at
+    msg = f"Message: {ctx.message.id}\n"
+    msg += f"[Jump link]({ctx.message.jump_url})\n"
+    if ctx.guild:
+        msg += f"Channel: {ctx.channel} {ctx.channel.id}\n"
+        msg += f"Guild: {ctx.guild} {ctx.guild.id}"
+    else:
+        msg += f"(Direct message)"
+
+    embed.add_field(name="Context", value=msg)
+    embed.add_field(name="Message contents", value=f"`{ctx.message.content[:1000]}`")
+
+def populate_log(embed: discord.Embed, title = None, message = None, exc: BaseException = None):
+    if exc is not None:
+        embed.title = "Uncaught Exception"
+        embed.add_field(
+            name=f"{exc.__class__.__name__}: {str(exc)}",
+            value="".join(traceback.format_exception(type(exc), exc))
+        )
+    else:
+        embed.title = title
+    embed.description = message
+
 class Logging(commands.Cog):
     '''A custom webhook log.'''
 
@@ -32,34 +60,6 @@ class Logging(commands.Cog):
         self.bot.log = None
         self.flush_loop.cancel()
 
-    def provide_context(self, embed, ctx):
-        embed.set_author(
-            name=f"{ctx.author.name} {ctx.author.id}",
-            icon_url=str(ctx.author.avatar_url)
-        )
-        embed.timestamp = ctx.message.created_at
-        msg = f"Message: {ctx.message.id}\n"
-        msg += f"[Jump link]({ctx.message.jump_url})\n"
-        if ctx.guild:
-            msg += f"Channel: {ctx.channel} {ctx.channel.id}\n"
-            msg += f"Guild: {ctx.guild} {ctx.guild.id}"
-        else:
-            msg += f"(Direct message)"
-
-        embed.add_field(name="Context", value=msg)
-        embed.add_field(name="Message contents", value=f"`{ctx.message.content[:1000]}`")
-
-    def populate_log(self, embed: discord.Embed, title = None, message = None, exc: BaseException = None):
-        if exc is not None:
-            embed.title = "Uncaught Exception"
-            embed.add_field(
-                name=f"{exc.__class__.__name__}: {str(exc)}",
-                value="".join(traceback.format_exception(type(exc), exc))
-            )
-        else:
-            embed.title = title
-        embed.description = message
-
     async def append_log(self, embed, level = logging.DEBUG):
         self.buffer.append(embed)
         if len(self.buffer) >= 10 or level >= logging.ERROR:
@@ -69,15 +69,15 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             color=self.COLORS[level],
         )
-        self.provide_context(embed, ctx)
-        self.populate_log(embed, title, message, exc)
+        provide_context(embed, ctx)
+        populate_log(embed, title, message, exc)
         await self.append_log(embed, level)
 
     async def log_raw(self, *, level = logging.DEBUG, message = None, exc = None):
         embed = discord.Embed(
             color=self.COLORS[level],
         )
-        self.populate_log(embed, message, exc)
+        populate_log(embed, message, exc)
         await self.append_log(embed, level)
 
     @tasks.loop(minutes=1)
