@@ -16,8 +16,8 @@ class Sh(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
         with open("data/icons.json") as fp:
-            self.icons: Dict[str, str] = json.load(fp)
-            self.distros = [*self.icons.keys()]
+            self.distros: Dict[str, str] = json.load(fp)
+            self.distro_names = [*self.distros.keys()]
         self.instruction_sets = (
             "6502","6809","680x0","8080","8051",
             "x86","x86_64","Alpha","ARC","ARM",
@@ -61,29 +61,14 @@ class Sh(commands.Cog):
             "Quartz Compositor"
         )
 
-    @commands.group(invoke_without_command=True)
+    @commands.command()
     async def neofetch(self, ctx: Context):
         '''Shows the user's system information.'''
-    
-    @neofetch.command()
-    async def mobile(self, ctx: Context):
-        '''Returns mobile-friendly output for `neofetch`.'''
-        icon, fields = self.get_neofetch(ctx)
-        output = "\n".join([
-            "```",
-            icon,
-            *fields,
-            "```"
-        ])
-        await ctx.send(output)
-
-    def get_neofetch(self, ctx: Context) -> Tuple[str, List[str]]:
-        '''OBTAIN THE NEOFETCH'''
         if ctx.guild:
             title = f"{ctx.author.display_name} @ {ctx.channel.name}"
         else:
             title = f"{ctx.author.display_name}@Direct Message"
-        distro = r.choice(self.distros)
+        distro = r.choice(self.distro_names)
         pacmans = set(r.choices(self.package_managers, k=r.randint(1, 3)))
         if ctx.guild:
             host = "Host: " + ctx.guild.name
@@ -103,15 +88,18 @@ class Sh(commands.Cog):
             "WM: " + r.choice(self.wms),
             "Terminal: Discord"
         ]
-        return (self.icons[distro], fields)
+        # This uses an embed because it allows the code blocks to be scaled better, and provides a better 
+        # color contrast inside the codeblocks. Unfortunately, it makes the mobile experience marginally
+        # worse.
+        embed = discord.Embed(color=ctx.color, description= "\n".join([
+            "```",
+            self.distros[distro].replace("`", "\u200b`"),
+            "```",
+            "```diff",
+            *fields,
+            "```",
+        ]))
+        await ctx.send(embed=embed)
 
-    @commands.command()
-    async def cat(self, ctx: Context, fp: str):
-        '''Reads the content of arbitrary files.'''
-    
-    @commands.command()
-    async def ls(self, ctx: Context, fp: str):
-        '''Lists accessible files.'''
-    
 def setup(bot: Bot):
     bot.add_cog(Sh(bot))

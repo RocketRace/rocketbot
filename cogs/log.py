@@ -46,11 +46,12 @@ class Logging(commands.Cog):
         logging.CRITICAL: discord.Color(0xc10508),
     }
 
-    def __init__(self, bot):
+    def __init__(self, bot: Bot):
         self.bot = bot
         self.bot.log = self.log
         self.bot.log_raw = self.log_raw
         self.buffer = []
+        self.webhook = None
     
     @commands.Cog.listener()
     async def on_initialized(self):
