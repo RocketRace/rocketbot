@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from bot import Bot, Context
+from .utils.models import Bot, Context
 from discord.ext import commands
 import discord
 import logging
@@ -20,11 +20,7 @@ class Errors(commands.Cog):
             return
 
         await ctx.log(level=logging.ERROR, exc=error)
-        msg = "".join([
-            error.__class__.__name__,
-            str(error)
-        ])
-        await ctx.boom(msg)
+        await ctx.boom(f"{error.__class__.__name__}: {error}")
 
 def setup(bot: Bot):
     bot.add_cog(Errors(bot))

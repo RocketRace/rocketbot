@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 '''A bot for my personal use.'''
 from __future__ import annotations
+from datetime import datetime
 from discord.ext import commands
 import discord
 import aiohttp
@@ -53,6 +54,7 @@ class Bot(commands.Bot):
     cog_names: List[str]
     log: Optional[Callable]
     log_raw: Optional[Callable]
+    db: Optional[aiosqlite.Connection]
 
     def __init__(self, 
         prefixes: List[str], 
@@ -63,11 +65,13 @@ class Bot(commands.Bot):
         **kwargs
     ):
         self.exit_code = 0
+        self.start_time = None
         self.color = color
         self.webhook_id = webhook_id
         self.cog_names = config.cogs
         self.log = None
         self.log_raw = None
+        self.db = None
 
         super().__init__(command_prefix=commands.when_mentioned_or(*prefixes), **kwargs)
         for cog in config.cogs:
@@ -89,6 +93,7 @@ class Bot(commands.Bot):
         return self.db.cursor()
 
     async def on_ready(self):
+        self.start_time = datetime.utcnow()
         print(f"Logged in as {self.user} (ID: {self.user.id})")
         print("Invite:", discord.utils.oauth_url(self.user.id))
     
@@ -106,7 +111,6 @@ bot = Bot(
         guilds=True,
         messages=True,
         reactions=True,
-        members=True
     )
 )
 

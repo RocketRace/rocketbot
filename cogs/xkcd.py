@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from discord.ext import commands, tasks, menus
-from bot import Bot, Context
+from .utils.models import Bot, Context
 import contextlib
 import discord
 from typing import *

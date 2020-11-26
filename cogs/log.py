@@ -3,8 +3,8 @@
 from discord.ext import commands, tasks
 import discord
 import logging
-import datetime
 import traceback
+from .utils.models import Bot
 
 def provide_context(embed, ctx):
     embed.set_author(
@@ -27,8 +27,9 @@ def populate_log(embed: discord.Embed, title = None, message = None, exc: BaseEx
     if exc is not None:
         embed.title = "Uncaught Exception"
         embed.add_field(
+            inline=False,
             name=f"{exc.__class__.__name__}: {str(exc)}",
-            value="".join(traceback.format_exception(type(exc), exc))
+            value="".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
         )
     else:
         embed.title = title
@@ -96,5 +97,5 @@ class Logging(commands.Cog):
             )
         self.buffer.clear()
         
-def setup(bot: commands.Bot):
+def setup(bot: Bot):
     bot.add_cog(Logging(bot))

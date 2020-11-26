@@ -4,7 +4,7 @@ from discord.ext import commands
 import discord
 import asyncio
 from typing import *
-from bot import Bot, Context
+from .utils.models import Bot, Context
 
 class RocketHelpCommand(commands.MinimalHelpCommand):
     '''A help command with a silly gimmick.'''
