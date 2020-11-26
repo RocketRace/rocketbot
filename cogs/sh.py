@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
+import contextlib
 from datetime import datetime
 from random import randint
 from discord.ext import commands
 import discord
+from discord.ext.commands.core import check
 from .utils.models import Context, Bot
 import random as r
 import json
@@ -100,6 +103,32 @@ class Sh(commands.Cog):
             "```",
         ]))
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def sudo(self, ctx: Context, **command):
+        '''Execute a command with super user privileges'''
+        if ctx.author.id in ():
+            return await ctx.boom(f"{ctx.author} is not in the sudoers file. This incident has been reported.")
+        n = 0
+        messages = [await ctx.send("Password: \N{CLOSED LOCK WITH KEY}")]
+        while True:
+            try:
+                messages.append(await self.bot.wait_for(
+                    "message", 
+                    timeout=5,
+                    check=lambda m: m.channel == ctx.channel and m.author == ctx.author
+                ))
+                messages.append(await ctx.send("Sorry, try again.\nPassword: \N{CLOSED LOCK WITH KEY}"))
+                n += 1
+            except asyncio.TimeoutError:
+                if n == 1:
+                    await ctx.boom(f"Sudo: {n} incorrect password attempt")
+                else:
+                    await ctx.boom(f"Sudo: {n} incorrect password attempts")
+                for m in messages:
+                    with contextlib.suppress(discord.Forbidden):
+                        await m.delete()
+                break
 
 def setup(bot: Bot):
     bot.add_cog(Sh(bot))
