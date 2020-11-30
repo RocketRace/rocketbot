@@ -5,6 +5,7 @@ import discord
 import logging
 import traceback
 from .utils.models import Bot
+from typing import *
 
 def provide_context(embed, ctx):
     embed.set_author(
@@ -26,11 +27,13 @@ def provide_context(embed, ctx):
 def populate_log(embed: discord.Embed, title = None, message = None, exc: BaseException = None):
     if exc is not None:
         embed.title = "Uncaught Exception"
-        embed.add_field(
-            inline=False,
-            name=f"{exc.__class__.__name__}: {str(exc)}",
-            value="".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        )
+        value = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        for i in range(0, len(value), 1024):
+            embed.add_field(
+                inline=False,
+                name=f"{exc.__class__.__name__}: {str(exc)}",
+                value=value[i:i+1024]
+            )
     else:
         embed.title = title
     embed.description = message
@@ -50,7 +53,7 @@ class Logging(commands.Cog):
         self.bot = bot
         self.bot.log = self.log
         self.bot.log_raw = self.log_raw
-        self.buffer = []
+        self.buffer: List[discord.Embed] = []
         self.webhook = None
     
     @commands.Cog.listener()
@@ -59,8 +62,8 @@ class Logging(commands.Cog):
         self.flush_loop.start()
 
     def cog_unload(self):
-        self.bot.log = None
         self.flush_loop.cancel()
+        self.bot.log = None
 
     async def append_log(self, embed, level = logging.DEBUG):
         self.buffer.append(embed)

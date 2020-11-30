@@ -55,6 +55,7 @@ class Bot(commands.Bot):
     log: Optional[Callable]
     log_raw: Optional[Callable]
     db: Optional[aiosqlite.Connection]
+    session: Optional[aiohttp.ClientSession]
 
     def __init__(self, 
         prefixes: List[str], 
@@ -72,6 +73,7 @@ class Bot(commands.Bot):
         self.log = None
         self.log_raw = None
         self.db = None
+        self.session = None
 
         super().__init__(command_prefix=commands.when_mentioned_or(*prefixes), **kwargs)
         for cog in config.cogs:

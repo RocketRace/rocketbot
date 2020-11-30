@@ -6,7 +6,6 @@ from datetime import datetime
 from random import randint
 from discord.ext import commands
 import discord
-from discord.ext.commands.core import check
 from .utils.models import Context, Bot
 import random as r
 import json
@@ -67,7 +66,7 @@ class Sh(commands.Cog):
     @commands.command()
     async def neofetch(self, ctx: Context):
         '''Shows the user's system information.'''
-        if ctx.guild:
+        if isinstance(ctx.channel, discord.TextChannel):
             title = f"{ctx.author.display_name} @ {ctx.channel.name}"
         else:
             title = f"{ctx.author.display_name}@Direct Message"

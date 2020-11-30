@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from discord.ext import commands, tasks, menus
+from discord.ext import commands, tasks, menus # type: ignore
 from .utils.models import Bot, Context
 import contextlib
 import discord
@@ -118,9 +118,9 @@ class Xkcd(commands.Cog):
                     embed = await self.query_xkcd(num)
                     # Raw methods are used here due to a lack of member cache
                     # If `members` intent is enabled, `m = get_member(ID)` and `m.send(...)` may be used
-                    channel = await self.bot.http.start_private_message(ID)
+                    channel = await self.bot.http.start_private_message(ID) # type: ignore
                     chan_id = channel["id"]
-                    await self.bot.http.send_message(
+                    await self.bot.http.send_message( # type: ignore
                         chan_id,
                         "\n".join([
                             f"XKCD #`{num}`",
@@ -136,8 +136,6 @@ class Xkcd(commands.Cog):
         
         Provide `number` to view a specific comic, or omit it to view a random one.
         '''
-        chan = await self.bot.http.start_private_message(156021301654454272)
-        print(chan)
         if number is None:
             number = random.randint(1, self.latest_number)
         elif number > self.latest_number:
@@ -189,13 +187,26 @@ class Xkcd(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def opt(self, ctx: Context):
         '''Opt in or out from XKCD reminders.'''
-        self.cached_users[ctx.author.id] = True
         await ctx.rocket()
-        if self.cached_users:
+        if self.cached_users.get(ctx.author.id) is not None:
+            result = self.cached_users[ctx.author.id]
+        else:
+            async with ctx.cursor() as cur:
+                await cur.execute(
+                    '''
+                    SELECT xkcd_remind FROM users WHERE id = ?;
+                    ''',
+                    (ctx.author.id, )
+                )
+                fetch = cur.fetchone()
+                result = False if fetch is None else next(fetch)
+        self.cached_users[ctx.author.id] = result
+        if result:
             await ctx.send("You are currently opted in to XKD reminders.")
         else:
             await ctx.send("You are currently opted out from XKD reminders.")
-    
+
+
     @opt.command(name="in")
     async def optin(self, ctx: Context):
         '''Opt in.'''

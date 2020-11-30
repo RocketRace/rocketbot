@@ -47,7 +47,6 @@ class Help(commands.Cog):
         self._original_help_command = bot.help_command
         bot.help_command = RocketHelpCommand(bot.color)
         bot.help_command.cog = self
-        bot.help_command.help = "Sends help"
 
     def cog_unload(self):
         self.bot.help_command = self._original_help_command
