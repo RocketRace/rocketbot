@@ -18,6 +18,22 @@ class EasyPaginator(menus.ListPageSource):
 class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: ignore
     '''Bot administration commands.'''
 
+    def __init__(self, bot: Bot, **kwargs) -> None:
+        self.blocked = set()
+        self.bot = bot
+        super().__init__(bot, **kwargs)
+    
+    @commands.Cog.listener()
+    async def on_initialized(self):
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                '''
+                SELECT id FROM users WHERE blocked == 1;
+                '''
+            )
+            results = await cur.fetchall()
+            self.blocked = set(results)
+
     async def after_leave(self, guild: discord.Guild, *, new: bool):
         await self.bot.log_raw(
             level=logging.DEBUG,
@@ -104,6 +120,34 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
             return await ctx.boom("Nick too short")
         new = "".join([*map("".join, zip(nick, overlay))]) + nick[len(overlay):]
         await ctx.me.edit(nick=new) # type: ignore
+        await ctx.rocket()
+
+    @commands.command()
+    async def block(self, ctx: Context, user: int):
+        async with ctx.cursor() as cur:
+            cur.execute(
+                '''
+                INSERT INTO users(id, blocked) 
+                VALUES (?, 1)
+                ON CONFLICT(id) DO UPDATE
+                SET blocked = 1;
+                ''',
+                (user,)
+            )
+        await ctx.rocket()
+
+    @commands.command()
+    async def unblock(self, ctx: Context, user: int):
+        async with ctx.cursor() as cur:
+            cur.execute(
+                '''
+                INSERT INTO users(id blocked) 
+                VALUES (?, 0)
+                ON CONFLICT(id) DO UPDATE
+                SET blocked = 0;
+                ''',
+                (user,)
+            )
         await ctx.rocket()
 
 def setup(bot: Bot):
