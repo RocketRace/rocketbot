@@ -72,6 +72,18 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
     @commands.command()
     async def sh(self, ctx: Context, *, cmd: str):
         await self.run_shell(cmd, ctx, typing=True)
+    
+    @commands.command()
+    async def sql(self, ctx: Context, query: str, *args):
+        async with ctx.cursor() as cur:
+            await cur.execute(
+                query,
+                args
+            )
+            result = await cur.fetchall()
+        result = f"Success. Results: ```{result}```"
+        await ctx.send(result)
+        await ctx.rocket()
 
     @commands.command(aliases=["yeet"])
     async def logout(self, ctx: Context):
