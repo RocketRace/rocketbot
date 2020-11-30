@@ -198,7 +198,7 @@ class Xkcd(commands.Cog):
                     ''',
                     (ctx.author.id, )
                 )
-                fetch ,= await cur.fetchone()
+                fetch = await cur.fetchone()
                 result = False if fetch is None else next(fetch)
         self.cached_users[ctx.author.id] = result
         if result:
