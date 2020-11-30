@@ -80,6 +80,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await self.run_shell("git pull", ctx, typing=True)
         for cog in self.bot.cog_names:
             self.bot.reload_extension(cog)
+        self.bot.dispatch("initialized")
         await ctx.rocket()
 
     @commands.command()
