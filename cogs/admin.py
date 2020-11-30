@@ -55,7 +55,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
 
     @commands.command()
     async def sh(self, ctx: Context, *, cmd: str):
-        self.run_shell(cmd, ctx, typing=True)
+        await self.run_shell(cmd, ctx, typing=True)
 
     @commands.command(aliases=["yeet"])
     async def logout(self, ctx: Context):
@@ -77,7 +77,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
 
     @load.command(name="all")
     async def _all(self, ctx: Context):
-        self.run_shell("git pull", ctx, typing=True)
+        await self.run_shell("git pull", ctx, typing=True)
         for cog in self.bot.cog_names:
             self.bot.reload_extension(cog)
         await ctx.rocket()
