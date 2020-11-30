@@ -202,9 +202,9 @@ class Xkcd(commands.Cog):
                 result = False if fetch is None else next(fetch)
         self.cached_users[ctx.author.id] = result
         if result:
-            await ctx.send("You are currently opted in to XKD reminders.")
+            await ctx.send("You are currently opted in to XKCD reminders.")
         else:
-            await ctx.send("You are currently opted out from XKD reminders.")
+            await ctx.send("You are currently opted out from XKCD reminders.")
 
 
     @opt.command(name="in")

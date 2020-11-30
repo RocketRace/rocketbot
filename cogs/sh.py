@@ -12,7 +12,7 @@ import json
 from . import utils
 from typing import *
 
-class Sh(commands.Cog):
+class Shell(commands.Cog):
     '''Assorted shell commands'''
 
     def __init__(self, bot: Bot):
@@ -130,4 +130,4 @@ class Sh(commands.Cog):
                 break
 
 def setup(bot: Bot):
-    bot.add_cog(Sh(bot))
+    bot.add_cog(Shell(bot))
