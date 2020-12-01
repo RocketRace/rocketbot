@@ -59,10 +59,12 @@ class Logging(commands.Cog):
     @commands.Cog.listener()
     async def on_initialized(self):
         self.webhook = await self.bot.fetch_webhook(self.bot.webhook_id)
-        self.flush_loop.start()
+        if not self.flush_loop.is_running():
+            self.flush_loop.start()
 
     def cog_unload(self):
-        self.flush_loop.cancel()
+        if self.flush_loop.is_running():
+            self.flush_loop.stop()
         self.bot.log = None
 
     async def append_log(self, embed, level = logging.DEBUG):

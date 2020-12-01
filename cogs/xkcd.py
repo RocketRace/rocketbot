@@ -72,11 +72,13 @@ class Xkcd(commands.Cog):
             )
             # hohoho pistol operator goes boom
             self.latest_number ,= await cur.fetchone()
-        self.update_xkcd.start()
+        if not self.update_xkcd.is_running():
+            self.update_xkcd.start()
 
     def cog_unload(self):
-        self.update_xkcd.cancel()
-    
+        if self.update_xkcd.is_running():
+            self.update_xkcd.stop()
+
     @tasks.loop(hours=1)
     async def update_xkcd(self):
         '''Checks for a new XKCD and sends update DMs to all opted in'''
@@ -85,7 +87,7 @@ class Xkcd(commands.Cog):
                 await cur.executemany(
                     '''
                     INSERT INTO users(id, xkcd_remind) 
-                    VALUES (?)
+                    VALUES (?, ?)
                     ON CONFLICT(id) DO UPDATE
                     SET xkcd_remind = EXCLUDED.xkcd_remind;
                     ''',
