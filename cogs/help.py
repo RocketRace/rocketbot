@@ -52,8 +52,8 @@ class RocketHelpCommand(commands.MinimalHelpCommand):
             for page in self.paginator.pages:
                 await self.get_destination().send(page)
 
-class Help(commands.Cog):
-    '''The help command'''
+class Meta(commands.Cog):
+    '''The meta commands'''
     def __init__(self, bot: Bot):
         self.bot = bot
         self._original_help_command = bot.help_command
@@ -62,6 +62,14 @@ class Help(commands.Cog):
 
     def cog_unload(self):
         self.bot.help_command = self._original_help_command
+    
+    @commands.command()
+    async def hello(self, ctx: Context):
+        msg = "\n".join([
+            "Hi! I'm the robotic sibling of RocketRace#0798.",
+            "I'm on GitHub: <https://github.com/RocketRace/rocketbot>",
+        ])
+        await ctx.send(msg)
 
 def setup(bot: Bot):
-    bot.add_cog(Help(bot))
+    bot.add_cog(Meta(bot))

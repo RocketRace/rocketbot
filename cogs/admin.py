@@ -84,6 +84,10 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         result = f"Success. Results: ```{result}```"
         await ctx.send(result)
         await ctx.rocket()
+    
+    @commands.command(name="eval")
+    async def _eval(self, ctx: Context, *, code):
+        ...
 
     @commands.command(aliases=["yeet"])
     async def logout(self, ctx: Context):
@@ -111,11 +115,40 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         self.bot.dispatch("initialized")
         await ctx.rocket()
 
-    @commands.command()
-    async def playing(self, ctx: Context, *, message):
-        activity = discord.Game(message) if message else None
+    async def update_presence(
+        self,
+        ctx: Context,
+        kind: discord.ActivityType,
+        msg: str
+    ):
+        if not msg:
+            activity = None
+        elif kind == discord.ActivityType.playing:
+            activity = discord.Game(name=msg)
+        else:
+            activity = discord.Activity(type=kind, name=msg)
         await self.bot.change_presence(activity=activity)
         await ctx.rocket()
+
+    @commands.command()
+    async def playing(self, ctx: Context, *, msg):
+        await self.update_presence(ctx, discord.ActivityType.playing, msg)
+    
+    @commands.command()
+    async def watching(self, ctx: Context, *, msg):
+        await self.update_presence(ctx, discord.ActivityType.watching, msg)
+
+    @commands.group(invoke_without_command=True)
+    async def listening(self, ctx): pass
+    @listening.command(name="to")
+    async def listening_to(self, ctx: Context, *, msg):
+        await self.update_presence(ctx, discord.ActivityType.listening, msg)
+
+    @commands.group(invoke_without_command=True)
+    async def competing(self, ctx): pass
+    @competing.command(name="in")
+    async def competing_in(self, ctx: Context, *, msg):
+        await self.update_presence(ctx, discord.ActivityType.competing, msg)
 
     @commands.command()
     @commands.guild_only()
