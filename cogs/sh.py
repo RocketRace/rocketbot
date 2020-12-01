@@ -29,7 +29,8 @@ class Shell(commands.Cog):
             "NS320xx","OpenRISC","PA-RISC","PDP-8",
             "PDP-11","POWER","RISC-V","RX","S+core",
             "SPARC","SuperH","System/360","Transputer",
-            "VAX","Z80"
+            "VAX","Z80","SUBLEQ","Minsky Machine Notation",
+            "Ideal Turing Machine","BitBitJump"
         )
         self.package_managers = (
             "dpkg","flatpak","guix","brew","ipkg",
@@ -51,7 +52,7 @@ class Shell(commands.Cog):
             "Lumina","LXDE","LXQt","MATE","MaXX","Maynard","Mezzo",
             "Moksha","Pantheon","Project Looking Glass","Razor-qt",
             "ROX","Sugar","theShell","Trinity","Unity",
-            "vera","Weston","Zorin"
+            "vera","Weston","Zorin","Audio-only (no DE)"
         )
         self.wms = (
             "2bwm","9wm","aewm","awesome","Berry","Blackbox","bspwm",
@@ -60,7 +61,7 @@ class Shell(commands.Cog):
             "Metacity","Mutter","mwm","Openbox","PekWM","PlayWM","Ratpoison",
             "Sawfish","sithWM","spectrwm","steamcompmgr","StumpWM","twm",
             "WMFS","Window Maker","Wingo","wmii","Xfwm","xmonad","uwm",
-            "Quartz Compositor"
+            "Quartz Compositor","No WM Necessary"
         )
 
     @commands.command()
@@ -69,7 +70,7 @@ class Shell(commands.Cog):
         if isinstance(ctx.channel, discord.TextChannel):
             title = f"{ctx.author.display_name} @ {ctx.channel.name}"
         else:
-            title = f"{ctx.author.display_name}@Direct Message"
+            title = f"{ctx.author.display_name} @ Direct Message"
         distro = r.choice(self.distro_names)
         pacmans = set(r.choices(self.package_managers, k=r.randint(1, 3)))
         if ctx.guild:
