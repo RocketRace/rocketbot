@@ -113,9 +113,9 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
             value = await fn()
             printed = stdout.getvalue()
             if printed:
-                await ctx.send(f"Stdout:\n```{printed}```\nResult:\n```py\n{value}```")
+                await ctx.send(f"Stdout:\n```\n{printed}\n```\nResult:\n```py\n{value}\n```")
             else:
-                await ctx.send(f"Result:\n```py\n{value}```")
+                await ctx.send(f"Result:\n```py\n{value}\n```")
 
 
     @commands.command(aliases=["yeet"])
