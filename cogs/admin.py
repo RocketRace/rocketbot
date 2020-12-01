@@ -7,6 +7,9 @@ import discord
 import logging
 import asyncio
 import dbouncer
+import textwrap
+import contextlib
+import io
 from datetime import timedelta
 
 class EasyPaginator(menus.ListPageSource):
@@ -85,8 +88,35 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await ctx.send(result)
     
     @commands.command(name="eval")
-    async def _eval(self, ctx: Context, *, code):
-        ...
+    async def eval_python(self, ctx: Context, *, code: str):
+        # no code blocks
+        if code.startswith("```") and code.endswith("```"):
+            code = "\n".join(code.splitlines()[1:-1])
+        if code.startswith("`") and code.endswith("`"):
+            code = code[1:-1]
+        # technically not always valid but is convenient
+        if len(code.splitlines()) == 1:
+            code = "return " + code
+        
+        code = f"async def wrapper():\n{textwrap.indent(code, prefix='  ')}"
+
+        new_globals = globals().copy()
+        new_globals.update({
+            "bot":self.bot,
+            "ctx":ctx,
+        })
+        # Compiles the coroutine and places it into new_globals
+        exec(code, new_globals)
+        fn = new_globals["wrapper"]
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            value = await fn()
+            printed = stdout.getvalue()
+            if printed:
+                await ctx.send(f"Stdout:\n```{printed}```\nResult:\n```py\n{value}```")
+            else:
+                await ctx.send(f"Result:\n```py\n{value}```")
+
 
     @commands.command(aliases=["yeet"])
     async def logout(self, ctx: Context):
@@ -106,8 +136,8 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         self.bot.dispatch("initialized")
         await ctx.rocket()
 
-    @load.command(name="all")
-    async def _all(self, ctx: Context):
+    @load.command()
+    async def git(self, ctx: Context):
         await self.run_shell("git pull", ctx, typing=True)
         for cog in self.bot.cog_names:
             self.bot.reload_extension(cog)
