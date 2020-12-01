@@ -83,7 +83,6 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
             result = await cur.fetchall()
         result = f"Success. Results: ```{result}```"
         await ctx.send(result)
-        await ctx.rocket()
     
     @commands.command(name="eval")
     async def _eval(self, ctx: Context, *, code):
@@ -113,7 +112,6 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         for cog in self.bot.cog_names:
             self.bot.reload_extension(cog)
         self.bot.dispatch("initialized")
-        await ctx.rocket()
 
     async def update_presence(
         self,

@@ -187,7 +187,6 @@ class Xkcd(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def opt(self, ctx: Context):
         '''Opt in or out from XKCD reminders.'''
-        await ctx.rocket()
         if self.cached_users.get(ctx.author.id) is not None:
             result = self.cached_users[ctx.author.id]
         else:
@@ -211,14 +210,12 @@ class Xkcd(commands.Cog):
     async def optin(self, ctx: Context):
         '''Opt in.'''
         self.cached_users[ctx.author.id] = True
-        await ctx.rocket()
         await ctx.send("You were opted in to XKCD reminders.")
 
     @opt.command(name="out")
     async def optout(self, ctx: Context):
         '''Opt out.'''
         self.cached_users[ctx.author.id] = False
-        await ctx.rocket()
         await ctx.send("You were opted out from XKCD reminders.")
 
 def setup(bot: Bot):
