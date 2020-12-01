@@ -24,6 +24,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
     def __init__(self, bot: Bot, **kwargs) -> None:
         self.blocked = set()
         self.bot = bot
+        self.last_value = None
         super().__init__(bot, **kwargs)
     
     @commands.Cog.listener()
@@ -104,6 +105,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         new_globals.update({
             "bot":self.bot,
             "ctx":ctx,
+            "_":self.last_value
         })
         # Compiles the coroutine and places it into new_globals
         exec(code, new_globals)
@@ -111,6 +113,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             value = await fn()
+            self.last_value = value
             printed = stdout.getvalue()
             if printed:
                 await ctx.send(f"Stdout:\n```\n{printed}\n```\nResult:\n```py\n{value}\n```")
