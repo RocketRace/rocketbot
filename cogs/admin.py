@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from asyncio import subprocess
+from typing import Union
 from .utils.models import Bot, Context
 from discord.ext import commands, menus # type: ignore
 import discord
@@ -105,6 +106,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         new_globals.update({
             "bot":self.bot,
             "ctx":ctx,
+            "cog":self.bot.get_cog,
             "_":self.last_value
         })
         # Compiles the coroutine and places it into new_globals
@@ -199,31 +201,49 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await ctx.rocket()
 
     @commands.command()
-    async def block(self, ctx: Context, user: int):
+    async def block(self, ctx: Context, user: Union[discord.User, int]):
+        if isinstance(user, discord.User):
+            user = user.id
         async with ctx.cursor() as cur:
-            cur.execute(
+            await cur.execute(
                 '''
-                INSERT INTO users(id, blocked) 
-                VALUES (?, 1)
-                ON CONFLICT(id) DO UPDATE
-                SET blocked = 1;
+                UPDATE users
+                SET blocked = 1
+                WHERE id == ?;
                 ''',
                 (user,)
             )
+            await cur.execute(
+                '''
+                INSERT OR IGNORE INTO users (id, blocked)
+                VALUES (?, 1);
+                ''',
+                (user,)
+            )
+        await ctx.db.commit()
         await ctx.rocket()
 
     @commands.command()
-    async def unblock(self, ctx: Context, user: int):
+    async def unblock(self, ctx: Context, user: Union[discord.User, int]):
+        if isinstance(user, discord.User):
+            user = user.id
         async with ctx.cursor() as cur:
-            cur.execute(
+            await cur.execute(
                 '''
-                INSERT INTO users(id blocked) 
-                VALUES (?, 0)
-                ON CONFLICT(id) DO UPDATE
-                SET blocked = 0;
+                UPDATE users
+                SET blocked = 0
+                WHERE id == ?;
                 ''',
                 (user,)
             )
+            await cur.execute(
+                '''
+                INSERT OR IGNORE INTO users (id, blocked)
+                VALUES (?, 0);
+                ''',
+                (user,)
+            )
+        await ctx.db.commit()
         await ctx.rocket()
 
 def setup(bot: Bot):

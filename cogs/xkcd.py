@@ -83,15 +83,21 @@ class Xkcd(commands.Cog):
     async def update_xkcd(self):
         '''Checks for a new XKCD and sends update DMs to all opted in'''
         async with self.bot.cursor() as cur:
-            if self.cached_users:
-                await cur.executemany(
+            for user, flag in self.cached_users.items():
+                await cur.execute(
                     '''
-                    INSERT INTO users(id, xkcd_remind) 
-                    VALUES (?, ?)
-                    ON CONFLICT(id) DO UPDATE
-                    SET xkcd_remind = EXCLUDED.xkcd_remind;
+                    UPDATE users
+                    SET xkcd_remind = ?
+                    WHERE id == ?;
                     ''',
-                    self.cached_users.items()
+                    (flag, user)
+                )
+                await cur.execute(
+                    '''
+                    INSERT OR IGNORE INTO users (id, xkcd_remind)
+                    VALUES (?, ?);
+                    ''',
+                    (user, flag)
                 )
             async with self.bot.session.get("https://xkcd.com/info.0.json") as resp:
                 data = json.loads(await resp.text())
@@ -104,6 +110,7 @@ class Xkcd(commands.Cog):
                     ''',
                     (data["num"],)
                 )
+        await self.bot.db.commit()
 
     async def send_notifications(self, latest_number):
         '''Sends notifications to all who have been opted in'''
@@ -200,7 +207,7 @@ class Xkcd(commands.Cog):
                     (ctx.author.id, )
                 )
                 fetch = await cur.fetchone()
-                result = False if fetch is None else next(fetch)
+                result = False if fetch is None else fetch[0]
         self.cached_users[ctx.author.id] = result
         if result:
             await ctx.send("You are currently opted in to XKCD reminders.")
