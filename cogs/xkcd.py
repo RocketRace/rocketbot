@@ -148,7 +148,9 @@ class Xkcd(commands.Cog):
         if number is None:
             number = random.randint(1, self.latest_number)
         elif number > self.latest_number:
-            raise ValueError(number)
+            return await ctx.boom(
+                f"Number too big (`{number}`). Max: `{self.latest_number}` (run `rocket latest` to view the latest comic)"
+            )
         await XkcdMenu(number=number).start(ctx)
 
     
@@ -182,16 +184,6 @@ class Xkcd(commands.Cog):
         embed.set_image(url=data["img"])
         embed.set_footer(text=data["alt"])
         return embed
-
-    @xkcd.error
-    async def xkcd_error(self, ctx: Context, error: commands.CommandError):
-        error = getattr(error, "original", error)
-        if isinstance(error, ValueError):
-            number ,= error.args # pistol operator strikes again
-            return await ctx.boom(
-                f"Number too big (`{number}`). Max: `{self.latest_number}` (run `rocket latest` to view the latest comic)"
-            )
-        raise error
 
     @commands.group(invoke_without_command=True)
     async def opt(self, ctx: Context):
