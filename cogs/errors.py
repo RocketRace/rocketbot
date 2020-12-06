@@ -15,7 +15,7 @@ class Errors(commands.Cog):
     async def on_command_error(self, ctx: Context, error: commands.CommandInvokeError):
         error = getattr(error, "original", error)
         
-        ignored = (commands.CommandNotFound, commands.NotOwner)
+        ignored = (commands.CommandNotFound, commands.NotOwner, commands.CheckFailure)
         if isinstance(error, ignored):
             return
 
