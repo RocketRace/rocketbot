@@ -98,7 +98,8 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
             code = code[1:-1]
         # technically not always valid but is convenient
         if len(code.splitlines()) == 1:
-            code = "return " + code
+            if not code.strip().endswith(";"):
+                code = "return " + code
         
         code = f"async def wrapper():\n{textwrap.indent(code, prefix='  ')}"
 

@@ -19,7 +19,8 @@ class Shell(commands.Cog):
         self.bot = bot
         with open("data/icons.json") as fp:
             self.distros: Dict[str, str] = json.load(fp)
-            self.distro_names = [*self.distros.keys()]
+        self.distro_names = [*self.distros.keys()]
+        self.lower_distros = {d.lower(): d for d in self.distro_names}
         self.instruction_sets = (
             "6502","6809","680x0","8080","8051",
             "x86","x86_64","Alpha","ARC","ARM",
@@ -65,13 +66,20 @@ class Shell(commands.Cog):
         )
 
     @commands.command()
-    async def neofetch(self, ctx: Context):
+    async def neofetch(self, ctx: Context, *, distro: Optional[str] = None):
         '''Shows the user's system information.'''
         if isinstance(ctx.channel, discord.TextChannel):
             title = f"{ctx.author.display_name} @ {ctx.channel.name}"
         else:
             title = f"{ctx.author.display_name} @ Direct Message"
-        distro = r.choice(self.distro_names)
+        if distro is None:
+            distro_name = r.choice(self.distro_names)
+        elif distro not in self.lower_distros:
+            return await ctx.boom(
+                f"Distro `{distro}` not found."
+            )
+        else:
+            distro_name = self.lower_distros[distro]
         pacmans = set(r.choices(self.package_managers, k=r.randint(1, 3)))
         if ctx.guild:
             host = "Host: " + ctx.guild.name
@@ -80,7 +88,7 @@ class Shell(commands.Cog):
         fields = [
             title,
             len(title) * "-",
-            f"OS: {distro} v{r.randint(0,4)}.{r.randint(0,16)}.{r.randint(0,256)} {r.choice(self.instruction_sets)}",
+            f"OS: {distro_name} v{r.randint(0,4)}.{r.randint(0,16)}.{r.randint(0,256)} {r.choice(self.instruction_sets)}",
             host,
             f"Kernel: {r.randint(0,32)}.{r.randint(0,8)}.{r.randint(0,3)}",
             "Uptime: " + utils.humanize_duration(datetime.utcnow() - self.bot.start_time),
@@ -96,7 +104,7 @@ class Shell(commands.Cog):
         # worse.
         embed = discord.Embed(color=ctx.color, description= "\n".join([
             "```",
-            self.distros[distro].replace("`", "\u200b`"),
+            self.distros[distro_name].replace("`", "\u200b`"),
             "```",
             "```diff",
             *fields,
@@ -105,7 +113,7 @@ class Shell(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def sudo(self, ctx: Context, **command):
+    async def sudo(self, ctx: Context, *, command):
         '''Execute a command with super user privileges'''
         if ctx.author.id in ():
             return await ctx.boom(f"{ctx.author} is not in the sudoers file. This incident has been reported.")
@@ -113,13 +121,19 @@ class Shell(commands.Cog):
         messages = [await ctx.send("Password: \N{CLOSED LOCK WITH KEY}")]
         while True:
             try:
-                messages.append(await self.bot.wait_for(
+                message = await self.bot.wait_for(
                     "message", 
                     timeout=5,
                     check=lambda m: m.channel == ctx.channel and m.author == ctx.author
-                ))
-                messages.append(await ctx.send("Sorry, try again.\nPassword: \N{CLOSED LOCK WITH KEY}"))
-                n += 1
+                )
+                messages.append(message)
+                if message.content == self.bot.secret_password:
+                    # I'll do it, fr
+                    import os
+                    await ctx.send(f"Success. Return code: {os.system(command)}")
+                else:
+                    messages.append(await ctx.send("Sorry, try again.\nPassword: \N{CLOSED LOCK WITH KEY}"))
+                    n += 1
             except asyncio.TimeoutError:
                 if n == 1:
                     await ctx.boom(f"Sudo: {n} incorrect password attempt")

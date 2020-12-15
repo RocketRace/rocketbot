@@ -116,4 +116,7 @@ bot = Bot(
     )
 )
 
+# :O what's this
+bot.secret_password = config.secret_password
+
 bot.run(config.token)
