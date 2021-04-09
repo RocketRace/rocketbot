@@ -1,0 +1,33 @@
+from discord.ext import commands
+from datetime import datetime
+from typing import List, Optional, Callable, Type
+import discord
+import aiohttp
+import aiosqlite
+
+class Bot(commands.Bot):
+    start_time: datetime
+    exit_code: int
+    color: discord.Color
+    webhook_id: int
+    cog_names: List[str]
+    log: Optional[Callable]
+    log_raw: Optional[Callable]
+    db: Optional[aiosqlite.Connection]
+    session: aiohttp.ClientSession
+    secret_password: str
+    def __init__(self, prefixes: List[str], *, color: discord.Color=..., db: str, webhook_id: int, secret_password: str, **kwargs): ...
+    async def connect_sessions(self, *, db: str) -> None: ...
+    def cursor(self) -> aiosqlite.Cursor: ...
+    async def on_ready(self): ...
+    async def get_context(self, message: discord.Message, *, cls: Type[commands.Context]=...): ...
+
+class Ctx(commands.Context):
+    async def react(self, emoji: discord.PartialEmoji): ...
+    async def rocket(self): ...
+    async def boom(self, message: str = ..., **kwargs): ...
+    async def log(self, **kwargs): ...
+    session: aiohttp.ClientSession
+    db: aiosqlite.Connection
+    def cursor(self) -> aiosqlite.Cursor: ...
+    color: discord.Color

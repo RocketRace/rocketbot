@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
-from discord.ext import commands
-import discord
 import asyncio
-from typing import *
-from .utils.models import Bot, Context
+from typing import TYPE_CHECKING
+
+import discord
+from discord.ext import commands
+
+if TYPE_CHECKING:
+    from bot import Bot, Ctx
+
 
 class RocketHelpCommand(commands.MinimalHelpCommand):
     '''A help command with a silly gimmick.'''
-    context: Context
+    ctx: Ctx
     def __init__(self, color: discord.Color, *args, **kwargs):
         self.color = color
         self.dm_flag = False
@@ -21,7 +26,7 @@ class RocketHelpCommand(commands.MinimalHelpCommand):
 
     async def send_pages(self) -> None:
         '''Stupid gag'''
-        ctx = self.context
+        ctx = self.ctx
         # Triggers when someone runs the plain help command in a guild
         # Otherwise, just sends normal help
         if self.dm_flag and ctx.guild is not None:
@@ -64,7 +69,7 @@ class Meta(commands.Cog):
         self.bot.help_command = self._original_help_command
     
     @commands.command()
-    async def hello(self, ctx: Context):
+    async def hello(self, ctx: Ctx):
         msg = "\n".join([
             "Hi! I'm the robotic sibling of RocketRace#0798.",
             "I'm on GitHub: <https://github.com/RocketRace/rocketbot>",

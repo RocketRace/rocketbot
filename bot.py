@@ -2,15 +2,18 @@
 # -*- coding: utf-8 -*-
 '''A bot for my personal use.'''
 from __future__ import annotations
+
+import contextlib
 from datetime import datetime
-from discord.ext import commands
-import discord
+
 import aiohttp
 import aiosqlite
-import contextlib
-from typing import *
+import discord
+from discord.ext import commands
+
 import config
-class Context(commands.Context):
+
+class Ctx(commands.Context):
     '''A custom command context.'''
     bot: Bot
     async def react(self, emoji):
@@ -47,28 +50,12 @@ class Context(commands.Context):
 
 class Bot(commands.Bot):
     '''Custom bot class with convenience methods and attributes.'''
-    
-    exit_code: int
-    color: discord.Color
-    webhook_id: int
-    cog_names: List[str]
-    log: Optional[Callable]
-    log_raw: Optional[Callable]
-    db: Optional[aiosqlite.Connection]
-    session: Optional[aiohttp.ClientSession]
-
-    def __init__(self, 
-        prefixes: List[str], 
-        *, 
-        db: str, 
-        webhook_id: int, 
-        color: discord.Color=discord.Color.default(), 
-        **kwargs
-    ):
+    def __init__(self, prefixes, *, color=discord.Color.default(), db, webhook_id, secret_password, **kwargs):
         self.exit_code = 0
         self.start_time = None
         self.color = color
         self.webhook_id = webhook_id
+        self.secret_password = secret_password
         self.cog_names = config.cogs
         self.log = None
         self.log_raw = None
@@ -84,6 +71,7 @@ class Bot(commands.Bot):
 
         # Connection acquisition must be asynchronous
         self.loop.create_task(self.connect_sessions(db=db))
+        super().__init__(prefixes, **kwargs)
 
     async def connect_sessions(self, *, db: str):
         self.db = await aiosqlite.connect(db)
@@ -97,17 +85,18 @@ class Bot(commands.Bot):
     async def on_ready(self):
         self.start_time = datetime.utcnow()
         print(f"Logged in as {self.user} (ID: {self.user.id})")
-        print("Invite:", discord.utils.oauth_url(self.user.id))
+        print("Invite:", discord.utils.oauth_url(str(self.user.id)))
     
     # Hook for custom context
     async def get_context(self, message: discord.Message, *, cls=commands.Context):
-        return await super().get_context(message, cls=Context)
+        return await super().get_context(message, cls=Ctx)
 
-bot = Bot(
+bot = Bot( # type: ignore
     ["rocket ", "Rocket "], # auto-capitalization aware
     color=discord.Color(0xe0e0f0),
     db=config.db,
     webhook_id=config.webhook_id,
+    secret_password = config.secret_password,
     allowed_mentions=discord.AllowedMentions(everyone=False),
     intents=discord.Intents(
         guilds=True,
@@ -115,8 +104,5 @@ bot = Bot(
         reactions=True,
     )
 )
-
-# :O what's this
-bot.secret_password = config.secret_password
 
 bot.run(config.token)

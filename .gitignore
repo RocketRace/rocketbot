@@ -32,3 +32,4 @@ config.py
 # sqlite
 rocket.db
 rocket.db-journal
+raw_data/

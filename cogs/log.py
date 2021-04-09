@@ -4,8 +4,8 @@ from discord.ext import commands, tasks
 import discord
 import logging
 import traceback
-from .utils.models import Bot
-from typing import *
+from bot import Bot
+from typing import List
 
 def provide_context(embed, ctx):
     embed.set_author(
@@ -96,7 +96,7 @@ class Logging(commands.Cog):
             return
         for i in range(0, len(self.buffer), 10):
             embeds = self.buffer[i:i+9]
-            await self.webhook.send(
+            await self.webhook.send( # type: ignore
                 embeds=embeds, 
                 username=f"{self.bot.user.name} logs",
                 avatar_url=str(self.bot.user.avatar_url)

@@ -1,16 +1,22 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
+import json
+import random as r
 from datetime import datetime
 from random import randint
-from discord.ext import commands
+from typing import TYPE_CHECKING, Dict, Optional
+
 import discord
-from .utils.models import Context, Bot
-import random as r
-import json
+from discord.ext import commands
+
 from . import utils
-from typing import *
+
+if TYPE_CHECKING:
+    from bot import Bot, Ctx
 
 class Shell(commands.Cog):
     '''Assorted shell commands'''
@@ -66,7 +72,7 @@ class Shell(commands.Cog):
         )
 
     @commands.command()
-    async def neofetch(self, ctx: Context, *, distro: Optional[str] = None):
+    async def neofetch(self, ctx: Ctx, *, distro: Optional[str] = None):
         '''Shows the user's system information.'''
         if isinstance(ctx.channel, discord.TextChannel):
             title = f"{ctx.author.display_name} @ {ctx.channel.name}"
@@ -113,7 +119,7 @@ class Shell(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def sudo(self, ctx: Context, *, command):
+    async def sudo(self, ctx: Ctx, *, command):
         '''Execute a command with super user privileges'''
         if ctx.author.id in ():
             return await ctx.boom(f"{ctx.author} is not in the sudoers file. This incident has been reported.")

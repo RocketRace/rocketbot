@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
 
-from asyncio import subprocess
-from typing import Union
-from .utils.models import Bot, Context
-from discord.ext import commands, menus # type: ignore
-import discord
-import logging
+from __future__ import annotations
+
 import asyncio
-import dbouncer
-import textwrap
 import contextlib
 import io
+import logging
+import textwrap
+from asyncio import subprocess
 from datetime import timedelta
+from typing import TYPE_CHECKING, Union
+
+import dbouncer
+import discord
+from discord.ext import menus  # type: ignore
+from discord.ext import commands
+
+if TYPE_CHECKING:
+    from bot import Bot, Ctx
+
 
 class EasyPaginator(menus.ListPageSource):
     def __init__(self, data):
@@ -51,7 +58,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
             message=f"Guild `{guild.name}` (ID: {guild.id}`) left automatically. Guild count: {len(self.bot.guilds)}!"
         )
 
-    async def run_shell(self, command: str, ctx: Context, *, typing: bool = False) -> menus.MenuPages:
+    async def run_shell(self, command: str, ctx: Ctx, *, typing: bool = False) -> menus.MenuPages:
         '''Run a shell command, obtain output and display it as a menu.'''
         if typing: # Using a with block is a bit difficult here
             await ctx.trigger_typing()
@@ -71,15 +78,15 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await menu.start(ctx)
         return menu
 
-    async def cog_check(self, ctx: Context):
+    async def cog_check(self, ctx: Ctx):
         return await self.bot.is_owner(ctx.author)
 
     @commands.command()
-    async def sh(self, ctx: Context, *, cmd: str):
+    async def sh(self, ctx: Ctx, *, cmd: str):
         await self.run_shell(cmd, ctx, typing=True)
     
     @commands.command()
-    async def sql(self, ctx: Context, query: str, *args):
+    async def sql(self, ctx: Ctx, query: str, *args):
         async with ctx.cursor() as cur:
             await cur.execute(
                 query,
@@ -90,7 +97,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await ctx.send(result)
     
     @commands.command(name="eval")
-    async def eval_python(self, ctx: Context, *, code: str):
+    async def eval_python(self, ctx: Ctx, *, code: str):
         # no code blocks
         if code.startswith("```") and code.endswith("```"):
             code = "\n".join(code.splitlines()[1:-1])
@@ -125,14 +132,14 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
 
 
     @commands.command(aliases=["yeet"])
-    async def logout(self, ctx: Context):
+    async def logout(self, ctx: Ctx):
         await ctx.session.close()
         await ctx.db.close()
         await ctx.rocket()
         await self.bot.logout()
     
     @commands.group(invoke_without_command=True)
-    async def load(self, ctx: Context, *cogs):
+    async def load(self, ctx: Ctx, *cogs):
         if len(cogs) == 0:
             for cog in self.bot.cog_names:
                 self.bot.reload_extension(cog)
@@ -143,7 +150,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await ctx.rocket()
 
     @load.command()
-    async def git(self, ctx: Context):
+    async def git(self, ctx: Ctx):
         await self.run_shell("git pull", ctx, typing=True)
         for cog in self.bot.cog_names:
             self.bot.reload_extension(cog)
@@ -151,7 +158,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
 
     async def update_presence(
         self,
-        ctx: Context,
+        ctx: Ctx,
         kind: discord.ActivityType,
         msg: str
     ):
@@ -165,29 +172,29 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await ctx.rocket()
 
     @commands.command()
-    async def playing(self, ctx: Context, *, msg):
+    async def playing(self, ctx: Ctx, *, msg):
         await self.update_presence(ctx, discord.ActivityType.playing, msg)
     
     @commands.command()
-    async def watching(self, ctx: Context, *, msg):
+    async def watching(self, ctx: Ctx, *, msg):
         await self.update_presence(ctx, discord.ActivityType.watching, msg)
 
     @commands.group(invoke_without_command=True)
     async def listening(self, ctx): pass
     @listening.command(name="to")
-    async def listening_to(self, ctx: Context, *, msg):
+    async def listening_to(self, ctx: Ctx, *, msg):
         await self.update_presence(ctx, discord.ActivityType.listening, msg)
 
     @commands.group(invoke_without_command=True)
     async def competing(self, ctx): pass
     @competing.command(name="in")
-    async def competing_in(self, ctx: Context, *, msg):
+    async def competing_in(self, ctx: Ctx, *, msg):
         await self.update_presence(ctx, discord.ActivityType.competing, msg)
 
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(change_nickname=True)
-    async def nick(self, ctx: Context):
+    async def nick(self, ctx: Ctx):
         nick = ctx.author.display_name
         long = "\u0363\u0367\u036d\u0366\u036b\u0363\u036d\u0364\u0369"
         short = "\u0363\u0367\u036d\u0366"
@@ -202,7 +209,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await ctx.rocket()
 
     @commands.command()
-    async def block(self, ctx: Context, user: Union[discord.User, int]):
+    async def block(self, ctx: Ctx, user: Union[discord.User, int]):
         if isinstance(user, discord.User):
             user = user.id
         async with ctx.cursor() as cur:
@@ -225,7 +232,7 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
         await ctx.rocket()
 
     @commands.command()
-    async def unblock(self, ctx: Context, user: Union[discord.User, int]):
+    async def unblock(self, ctx: Ctx, user: Union[discord.User, int]):
         if isinstance(user, discord.User):
             user = user.id
         async with ctx.cursor() as cur:

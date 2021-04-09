@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
-from discord.ext import commands, tasks, menus # type: ignore
-from .utils.models import Bot, Context
 import contextlib
-import discord
-from typing import *
-import json
 import datetime
+import json
 import random
+from typing import TYPE_CHECKING, Dict, Optional
+
+import discord
+from discord.ext import menus  # type: ignore
+from discord.ext import commands, tasks
+
+if TYPE_CHECKING:
+    from bot import Bot, Ctx
+
 
 class XkcdMenu(menus.Menu):
     '''A menu that fetches its page source from XKCD.'''
@@ -15,7 +21,7 @@ class XkcdMenu(menus.Menu):
         self.current = number
         super().__init__(delete_message_after=True, **kwargs)
 
-    async def send_initial_message(self, ctx: Context, channel: discord.TextChannel):
+    async def send_initial_message(self, ctx: Ctx, channel: discord.TextChannel):
         embed = await self.ctx.cog.query_xkcd(self.current)
         return await channel.send(embed=embed)
 
@@ -134,13 +140,13 @@ class Xkcd(commands.Cog):
                         "\n".join([
                             f"XKCD #`{num}`",
                             "*You're being reminded because you opted in using `rocket opt in`.*",
-                            "*To opt out from reminders, use `rocket opt out`."
+                            "*To opt out from reminders, use `rocket opt out`.*"
                         ]),
                         embed=embed.to_dict()
                     )
 
     @commands.group(invoke_without_command=True)
-    async def xkcd(self, ctx: Context, *, number: Optional[int]):
+    async def xkcd(self, ctx: Ctx, *, number: Optional[int]):
         '''Browse XKCD comics.
         
         Provide `number` to view a specific comic, or omit it to view a random one.
@@ -155,7 +161,7 @@ class Xkcd(commands.Cog):
 
     
     @xkcd.command()
-    async def latest(self, ctx: Context):
+    async def latest(self, ctx: Ctx):
         '''Returns the latest comic.'''
         await XkcdMenu(number=self.latest_number).start(ctx)
 
@@ -186,7 +192,7 @@ class Xkcd(commands.Cog):
         return embed
 
     @commands.group(invoke_without_command=True)
-    async def opt(self, ctx: Context):
+    async def opt(self, ctx: Ctx):
         '''Opt in or out from XKCD reminders.'''
         if self.cached_users.get(ctx.author.id) is not None:
             result = self.cached_users[ctx.author.id]
@@ -208,13 +214,13 @@ class Xkcd(commands.Cog):
 
 
     @opt.command(name="in")
-    async def optin(self, ctx: Context):
+    async def optin(self, ctx: Ctx):
         '''Opt in.'''
         self.cached_users[ctx.author.id] = True
         await ctx.send("You were opted in to XKCD reminders.")
 
     @opt.command(name="out")
-    async def optout(self, ctx: Context):
+    async def optout(self, ctx: Ctx):
         '''Opt out.'''
         self.cached_users[ctx.author.id] = False
         await ctx.send("You were opted out from XKCD reminders.")

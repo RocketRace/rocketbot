@@ -6,9 +6,8 @@ Worth using elsewhere, too
 '''
 
 from datetime import timedelta
-from typing import *
 
-def humanize_duration(td: timedelta, millis = False) -> str:
+def humanize_duration(td: timedelta, millis: bool = False) -> str:
     '''Returns a human-friendly string representing a duration'''
     out = ""
     total = td.total_seconds()
