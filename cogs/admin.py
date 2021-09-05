@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import datetime
 import io
 import logging
 import textwrap
+from urllib import parse
 from asyncio import subprocess
 from datetime import timedelta
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 import dbouncer
 import discord
@@ -21,6 +23,8 @@ if TYPE_CHECKING:
 else:
     Ctx = commands.Context
 
+_T = TypeVar("_T")
+Sdict = dict[str, _T]
 
 class EasyPaginator(menus.ListPageSource):
     def __init__(self, data):
@@ -131,7 +135,6 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
                 await ctx.send(f"Stdout:\n```\n{printed}\n```\nResult:\n```py\n{value}\n```")
             else:
                 await ctx.send(f"Result:\n```py\n{value}\n```")
-
 
     @commands.command(aliases=["yeet"])
     async def logout(self, ctx: Ctx):
@@ -251,6 +254,68 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
                 (user,)
             )
         await ctx.rocket()
+
+    @commands.command()
+    async def yum(self, ctx: Ctx, tomorrow: bool = False):
+        async with self.bot.session.get("https://kitchen.kanttiinit.fi/areas?idsOnly=1") as resp:
+            areas = await resp.json()
+        restaurant_ids = [str(id) for area in areas if area["id"] == 1 for id in area["restaurants"]]
+        id_str = ",".join(restaurant_ids)
+        async with self.bot.session.get(f"https://kitchen.kanttiinit.fi/restaurants?ids={id_str}&priceCategories=student,studentPremium") as resp:
+            restaurants: list[Sdict[Any]] = await resp.json()
+        day = datetime.date.today()
+        if tomorrow:
+            day = day + datetime.timedelta(days=1)
+        async with self.bot.session.get(f"https://kitchen.kanttiinit.fi/menus?restaurants={id_str}&days={day}") as resp:
+            menus: Sdict[Sdict[list[Sdict[Any]]]] = await resp.json()
+        panel = discord.Embed(
+            color=self.bot.color,
+            title="Open restaurants",
+            url=f"https://kanttiinit.fi/?day={day}"
+        )
+        for id in restaurant_ids:
+            restaurant = [r for r in restaurants if r["id"] == int(id)][0]
+
+            name = restaurant["name"]
+            address = restaurant["address"]
+            url = restaurant["url"]
+            hours = restaurant["openingHours"][day.weekday()]
+            price_category = restaurant["priceCategory"]
+            if price_category == "student":
+                price = "Student prices"
+            else:
+                price = "Student discounts"
+            
+            if hours is None:
+                continue
+            
+            lines = [
+                f"[{address}](https://maps.google.com?q={parse.quote(address)})",
+                f"Open {hours} [(Link)]({url})"
+            ]
+            try:
+                menu: list[Sdict] = menus[id][str(day)]
+                if not menu:
+                    continue
+                lines.append("```")
+                for meal in menu:
+                    title = meal["title"]
+                    properties = " ".join(meal["properties"])
+                    if properties:
+                        lines.append(f"{title} -- {properties}")
+                    else:
+                        lines.append(title)
+                lines.append("```")
+
+            except KeyError:
+                continue
+            
+            panel.add_field(
+                name=f"{name} -- [{price}]",
+                value="\n".join(lines),
+                inline=False
+            )
+        await ctx.send(embed=panel)
 
 def setup(bot: Bot):
     bot.add_cog(Admin(
