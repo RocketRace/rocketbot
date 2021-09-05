@@ -8,6 +8,7 @@ from datetime import datetime
 
 import aiohttp
 import aiosqlite
+from aiosqlite.core import Connection
 import discord
 from discord.ext import commands
 
@@ -16,6 +17,7 @@ import config
 class Ctx(commands.Context):
     '''A custom command context.'''
     bot: Bot
+
     async def react(self, emoji):
         '''Adds a reaction to this message.'''
         with contextlib.suppress(discord.HTTPException):
@@ -38,7 +40,7 @@ class Ctx(commands.Context):
         return self.bot.session
     
     @property
-    def db(self):
+    def conn(self):
         return self.bot.db
 
     def cursor(self):
@@ -72,6 +74,10 @@ class Bot(commands.Bot):
         # Connection acquisition must be asynchronous
         self.loop.create_task(self.connect_sessions(db=db))
         super().__init__(prefixes, **kwargs)
+    
+    async def close(self):
+        await self.session.close()
+        await self.db.close()
 
     async def connect_sessions(self, *, db: str):
         self.db = await aiosqlite.connect(db)

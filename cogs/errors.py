@@ -10,6 +10,8 @@ from discord.ext import commands
 
 if TYPE_CHECKING:
     from bot import Bot, Ctx
+else:
+    Ctx = commands.Context
 
 class Errors(commands.Cog):
     '''A custom error handler for unhandled exceptions.'''

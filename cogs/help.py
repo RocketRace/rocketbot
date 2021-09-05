@@ -9,7 +9,8 @@ from discord.ext import commands
 
 if TYPE_CHECKING:
     from bot import Bot, Ctx
-
+else:
+    Ctx = commands.Context
 
 class RocketHelpCommand(commands.MinimalHelpCommand):
     '''A help command with a silly gimmick.'''
