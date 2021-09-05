@@ -26,6 +26,9 @@ class Errors(commands.Cog):
         ignored = (commands.CommandNotFound, commands.NotOwner, commands.CheckFailure)
         if isinstance(error, ignored):
             return
+        
+        elif isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.boom("Missing required arguments...")
 
         await ctx.log(level=logging.ERROR, exc=error)
         await ctx.boom(f"{error.__class__.__name__}: {error}")

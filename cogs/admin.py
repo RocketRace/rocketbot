@@ -135,10 +135,8 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
 
     @commands.command(aliases=["yeet"])
     async def logout(self, ctx: Ctx):
-        await ctx.session.close()
-        await ctx.db.close()
         await ctx.rocket()
-        await self.bot.logout()
+        await self.bot.close()
     
     @commands.group(invoke_without_command=True)
     async def load(self, ctx: Ctx, *cogs):
@@ -230,7 +228,6 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
                 ''',
                 (user,)
             )
-        await ctx.db.commit()
         await ctx.rocket()
 
     @commands.command()
@@ -253,7 +250,6 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
                 ''',
                 (user,)
             )
-        await ctx.db.commit()
         await ctx.rocket()
 
 def setup(bot: Bot):

@@ -117,7 +117,6 @@ class Xkcd(commands.Cog):
                     ''',
                     (data["num"],)
                 )
-        await self.bot.db.commit()
 
     async def send_notifications(self, latest_number):
         '''Sends notifications to all who have been opted in'''

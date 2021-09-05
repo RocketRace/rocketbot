@@ -14,7 +14,6 @@ else:
 
 class RocketHelpCommand(commands.MinimalHelpCommand):
     '''A help command with a silly gimmick.'''
-    ctx: Ctx
     def __init__(self, color: discord.Color, *args, **kwargs):
         self.color = color
         self.dm_flag = False
@@ -27,7 +26,9 @@ class RocketHelpCommand(commands.MinimalHelpCommand):
 
     async def send_pages(self) -> None:
         '''Stupid gag'''
-        ctx = self.ctx
+        if self.context is None:
+            return
+        ctx: Ctx = self.context
         # Triggers when someone runs the plain help command in a guild
         # Otherwise, just sends normal help
         if self.dm_flag and ctx.guild is not None:

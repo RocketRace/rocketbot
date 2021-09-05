@@ -1,4 +1,4 @@
 discord.py>=1.7
-aiosqlite
+git+https://github.com/Rapptz/asqlite
 git+https://github.com/Rapptz/discord-ext-menus
 git+https://github.com/RocketRace/dbouncer

@@ -23,11 +23,11 @@ class Ctx(commands.Context):
         with contextlib.suppress(discord.HTTPException):
             await self.message.add_reaction(emoji)
 
-    async def rocket(self):
+    async def rocket(self) -> None:
         '''Reacts with a rocket emoji.'''
         await self.react("\N{ROCKET}")
 
-    async def boom(self, message = None, **kwargs):
+    async def boom(self, message = None, **kwargs) -> None:
         '''Reacts with a boom emoji, and sends an optional error message.'''
         await self.react("\N{COLLISION SYMBOL}")
         await self.send(message, **kwargs)
@@ -73,7 +73,6 @@ class Bot(commands.Bot):
 
         # Connection acquisition must be asynchronous
         self.loop.create_task(self.connect_sessions(db=db))
-        super().__init__(prefixes, **kwargs)
     
     async def close(self):
         await self.session.close()
@@ -83,6 +82,7 @@ class Bot(commands.Bot):
         self.db = await aiosqlite.connect(db)
         self.session = aiohttp.ClientSession()
         self.dispatch("initialized")
+        print("Fully initialized.")
 
     def cursor(self):
         '''Obtains a cursor once awaited.'''
@@ -97,7 +97,7 @@ class Bot(commands.Bot):
     async def get_context(self, message: discord.Message, *, cls=commands.Context):
         return await super().get_context(message, cls=Ctx)
 
-bot = Bot( # type: ignore
+bot = Bot(
     ["rocket ", "Rocket "], # auto-capitalization aware
     color=discord.Color(0xe0e0f0),
     db=config.db,

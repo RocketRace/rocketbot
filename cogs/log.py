@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 from discord.ext import commands, tasks
 import discord
 import logging
