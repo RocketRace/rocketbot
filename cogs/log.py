@@ -4,10 +4,14 @@ from discord.ext import commands, tasks
 import discord
 import logging
 import traceback
-from bot import Bot
-from typing import List
+from typing import TYPE_CHECKING, List
 
-def provide_context(embed, ctx):
+if TYPE_CHECKING:
+    from bot import Bot, Ctx
+else:
+    Ctx = commands.Context
+
+def provide_context(embed, ctx: Ctx):
     embed.set_author(
         name=f"{ctx.author.name} {ctx.author.id}",
         icon_url=str(ctx.author.avatar_url)
@@ -72,7 +76,7 @@ class Logging(commands.Cog):
         if len(self.buffer) >= 10 or level >= logging.ERROR:
             await self.flush_buffer()
 
-    async def log(self, ctx, *, level = logging.DEBUG, title = None, message = None, exc = None):
+    async def log(self, ctx: Ctx, *, level = logging.DEBUG, title = None, message = None, exc = None):
         embed = discord.Embed(
             color=self.COLORS[level],
         )

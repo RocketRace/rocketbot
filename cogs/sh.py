@@ -17,6 +17,8 @@ from . import utils
 
 if TYPE_CHECKING:
     from bot import Bot, Ctx
+else:
+    Ctx = commands.Context
 
 class Shell(commands.Cog):
     '''Assorted shell commands'''

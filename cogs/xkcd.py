@@ -13,7 +13,8 @@ from discord.ext import commands, tasks
 
 if TYPE_CHECKING:
     from bot import Bot, Ctx
-
+else:
+    Ctx = commands.Context
 
 class XkcdMenu(menus.Menu):
     '''A menu that fetches its page source from XKCD.'''
