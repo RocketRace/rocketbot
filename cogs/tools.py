@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import string
 from typing import TYPE_CHECKING
 
 import discord
@@ -20,6 +21,19 @@ class Tools(commands.Cog):
 
     def __init__(self, bot: Bot):
         self.bot = bot
+        self.keycaps: dict[str, str] = {}
+        self.define_keycaps()
+
+    def define_keycaps(self):
+        '''Adds some shorthands for keycaps'''
+        # Numbers
+        for i in range(10):
+            self.keycaps[str(i)] = f"{i}\uFE0F\u20E3" # vs-16, enclosing keycap
+        self.keycaps["10"] = "\U0001F51F" # keycap 10
+
+        # Letters
+        for c in string.ascii_lowercase:
+            self.keycaps[c] = chr(ord(c) - ord('a') + ord("\U0001F1E6")) # regional indicator A
 
     @commands.command(name="poll:")
     async def poll(self, ctx: Ctx, *, msg: str):
@@ -39,7 +53,7 @@ class Tools(commands.Cog):
         and add those as reactions. 
         
         This is *not* an overengineered poll command with embeds and timeouts and whatever.
-        It just adds reactions.
+        It just adds reactions. (Okay, it's a little overengineered.)
         '''
         # This determines if a line starts with emoji.
         #
@@ -49,8 +63,14 @@ class Tools(commands.Cog):
         # this uses heuristics and Discord 400s to parse built-in emoji.
         custom_emoji_regex = re.compile(r"<a?:[a-zA-Z0-9_]{2,32}:[0-9]{18,22}>")
         definitely_not_emoji_regex = re.compile(r"[\x21-\x3B\x3D\x3F-\x7E]")
-        lines = [line.split(None, 1)[0] for line in msg.splitlines() if " " in line]
+        lines = [line.split(None, 1)[0] for line in msg.splitlines() if not line.isspace()]
         for maybe_emoji in lines:
+            # numbers and letters are cool
+            try:
+                shorthand = maybe_emoji.removesuffix(":").strip().lower()
+                await ctx.message.add_reaction(self.keycaps[shorthand])
+            except KeyError as e:
+                pass
             # An incomplete match is enough to rule this out
             if definitely_not_emoji_regex.match(maybe_emoji) is not None:
                 continue
