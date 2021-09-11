@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import contextlib
 from datetime import datetime
+from typing import Any, Callable, Coroutine
 
 import aiohttp
-import aiosqlite
-from aiosqlite.core import Connection
+import asqlite
 import discord
 from discord.ext import commands
 
@@ -52,17 +52,18 @@ class Ctx(commands.Context):
 
 class Bot(commands.Bot):
     '''Custom bot class with convenience methods and attributes.'''
-    def __init__(self, prefixes, *, color=discord.Color.default(), db, webhook_id, secret_password, **kwargs):
+    def __init__(self, prefixes: list[str], *, color: discord.Color=discord.Color.default(), db: str, webhook_id: int, secret_password: str, **kwargs):
         self.exit_code = 0
-        self.start_time = None
         self.color = color
         self.webhook_id = webhook_id
         self.secret_password = secret_password
         self.cog_names = config.cogs
-        self.log = None
-        self.log_raw = None
-        self.db = None
-        self.session = None
+        # late initialization, forced type-ignore
+        self.start_time: datetime = None # type: ignore
+        self.log: Callable[..., Coroutine[Any]] = None # type: ignore
+        self.log_raw: Callable[..., Coroutine[Any]] = None # type: ignore
+        self.db: asqlite.Connection = None # type: ignore
+        self.session: aiohttp.ClientSession = None # type: ignore
 
         super().__init__(command_prefix=commands.when_mentioned_or(*prefixes), **kwargs)
         for cog in config.cogs:
@@ -79,20 +80,20 @@ class Bot(commands.Bot):
         await self.db.close()
 
     async def connect_sessions(self, *, db: str):
-        self.db = await aiosqlite.connect(db)
+        self.db = await asqlite.connect(db) # type: ignore
         self.session = aiohttp.ClientSession()
+        
+        await self.wait_until_ready()
+        self.start_time = datetime.utcnow()
+        
         self.dispatch("initialized")
-        print("Fully initialized.")
+        print(f"Logged in as {self.user} (ID: {self.user.id})")
+        print("Invite:", discord.utils.oauth_url(str(self.user.id)))
 
     def cursor(self):
         '''Obtains a cursor once awaited.'''
         return self.db.cursor()
 
-    async def on_ready(self):
-        self.start_time = datetime.utcnow()
-        print(f"Logged in as {self.user} (ID: {self.user.id})")
-        print("Invite:", discord.utils.oauth_url(str(self.user.id)))
-    
     # Hook for custom context
     async def get_context(self, message: discord.Message, *, cls=commands.Context):
         return await super().get_context(message, cls=Ctx)

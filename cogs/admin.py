@@ -98,8 +98,9 @@ class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: i
                 query,
                 args
             )
-            result = await cur.fetchall()
-        result = f"Success. Results: ```{result}```"
+            result = [list(row) for row in await cur.fetchall()]
+        lines = "\n".join(" | ".join(str(column) for column in row) for row in result)
+        result = f"Success. Results: ```{lines}```"
         await ctx.send(result)
     
     @commands.command(name="eval")

@@ -30,6 +30,8 @@ config.py
 .venv/
 .mypy_cache/
 # sqlite
-rocket.db
-rocket.db-journal
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
 raw_data/

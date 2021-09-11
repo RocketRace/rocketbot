@@ -86,26 +86,17 @@ class Xkcd(commands.Cog):
         if self.update_xkcd.is_running():
             self.update_xkcd.stop()
 
-    @tasks.loop(hours=1)
+    @tasks.loop(minutes=15)
     async def update_xkcd(self):
         '''Checks for a new XKCD and sends update DMs to all opted in'''
         async with self.bot.cursor() as cur:
-            for user, flag in self.cached_users.items():
-                await cur.execute(
-                    '''
-                    UPDATE users
-                    SET xkcd_remind = ?
-                    WHERE id == ?;
-                    ''',
-                    (flag, user)
-                )
-                await cur.execute(
-                    '''
+            await cur.executemany(
+                '''
                     INSERT OR IGNORE INTO users (id, xkcd_remind)
                     VALUES (?, ?);
                     ''',
-                    (user, flag)
-                )
+                self.cached_users.items()
+            )
             async with self.bot.session.get("https://xkcd.com/info.0.json") as resp:
                 data = json.loads(await resp.text())
             if data["num"] > self.latest_number:
@@ -127,13 +118,13 @@ class Xkcd(commands.Cog):
                 '''
             )
             rows = await cur.fetchall()
-        for (ID,) in rows:
+        for (id,) in rows:
             with contextlib.suppress(discord.Forbidden):
                 for num in range(self.latest_number + 1, latest_number + 1):
                     embed = await self.query_xkcd(num)
                     # Raw methods are used here due to a lack of member cache
                     # If `members` intent is enabled, `m = get_member(ID)` and `m.send(...)` may be used
-                    channel = await self.bot.http.start_private_message(ID) # type: ignore
+                    channel = await self.bot.http.start_private_message(id) # type: ignore
                     chan_id = channel["id"]
                     await self.bot.http.send_message( # type: ignore
                         chan_id,
@@ -159,7 +150,6 @@ class Xkcd(commands.Cog):
             )
         await XkcdMenu(number=number).start(ctx)
 
-    
     @xkcd.command()
     async def latest(self, ctx: Ctx):
         '''Returns the latest comic.'''

@@ -71,7 +71,6 @@ class Logging(commands.Cog):
     def cog_unload(self):
         if self.flush_loop.is_running():
             self.flush_loop.stop()
-        self.bot.log = None
 
     async def append_log(self, embed, level = logging.DEBUG):
         self.buffer.append(embed)
