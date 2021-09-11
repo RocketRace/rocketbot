@@ -30,7 +30,7 @@ class EasyPaginator(menus.ListPageSource):
     def __init__(self, data):
         super().__init__(data, per_page=1)
     async def format_page(self, menu, page):
-        return f"{page}\n`Page {menu.current_page}/{len(self.entries) - 1}`"
+        return f"{page}\n`Page {menu.current_page + 1}/{len(self.entries)}`"
 
 class Admin(dbouncer.DefaultBouncer, command_attrs=dict(hidden=True)): # type: ignore
     '''Bot administration commands.'''
