@@ -92,8 +92,10 @@ class Xkcd(commands.Cog):
         async with self.bot.cursor() as cur:
             await cur.executemany(
                 '''
-                    INSERT OR IGNORE INTO users (id, xkcd_remind)
-                    VALUES (?, ?);
+                    INSERT INTO users (id, xkcd_remind)
+                    VALUES (?, ?)
+                    ON CONFLICT(id) DO UPDATE
+                    SET xkcd_remind = excluded.xkcd_remind;
                     ''',
                 self.cached_users.items()
             )
