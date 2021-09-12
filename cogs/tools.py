@@ -63,7 +63,7 @@ class Tools(commands.Cog):
         # this uses heuristics and Discord 400s to parse built-in emoji.
         custom_emoji_regex = re.compile(r"<a?:[a-zA-Z0-9_]{2,32}:[0-9]{18,22}>")
         definitely_not_emoji_regex = re.compile(r"[\x21-\x3B\x3D\x3F-\x7E]")
-        lines = [line.split(None, 1)[0] for line in msg.splitlines() if not line.isspace()]
+        lines = [line.split(None, 1)[0] for line in msg.splitlines() if line and not line.isspace()]
         for maybe_emoji in lines:
             # numbers and letters are cool
             try:
