@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 from datetime import datetime
+import functools
 from typing import Any, Callable, Coroutine
 
 import aiohttp
@@ -17,6 +18,9 @@ import config
 class Ctx(commands.Context):
     '''A custom command context.'''
     bot: Bot
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
 
     async def react(self, emoji):
         '''Adds a reaction to this message.'''
@@ -94,8 +98,13 @@ class Bot(commands.Bot):
         '''Obtains a cursor once awaited.'''
         return self.db.cursor()
 
-    # Hook for custom context
+    # Hook for custom context, as well as reply invokes
     async def get_context(self, message: discord.Message, *, cls=commands.Context):
+        if message.reference is not None:
+            resolved = message.reference.resolved
+            if isinstance(resolved, discord.Message):
+                resolved.content = f"{message.content} {resolved.content}"
+                return await super().get_context(resolved, cls=Ctx)
         return await super().get_context(message, cls=Ctx)
 
 bot = Bot(
