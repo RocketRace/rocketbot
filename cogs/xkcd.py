@@ -67,7 +67,6 @@ class Xkcd(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
         self.latest_number = 1
-        self.cached_users: Dict[int, bool] = {}
     
     @commands.Cog.listener()
     async def on_initialized(self): # Called once bot.session and bot.db are ready
@@ -174,17 +173,13 @@ class Xkcd(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def opt(self, ctx: Ctx):
         '''Opt in or out from XKCD reminders.'''
-        if self.cached_users.get(ctx.author.id) is not None:
-            result = self.cached_users[ctx.author.id]
-        else:
-            fetch = await self.bot.db.fetchone(
-                '''
-                SELECT xkcd_remind FROM users WHERE id = ?;
-                ''',
-                (ctx.author.id, )
-            )
-            result = False if fetch is None else fetch[0]
-        self.cached_users[ctx.author.id] = result
+        fetch = await self.bot.db.fetchone(
+            '''
+            SELECT xkcd_remind FROM users WHERE id = ?;
+            ''',
+            (ctx.author.id, )
+        )
+        result = False if fetch is None else fetch[0]
         if result:
             await ctx.send("You are currently opted in to XKCD reminders.")
         else:
