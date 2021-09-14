@@ -164,7 +164,7 @@ class Shell(commands.Cog):
                         await m.delete()
                 break
 
-    @commands.command()
+    # @commands.command()
     async def bottom(self, ctx: Ctx):
         '''Displays process information'''
         
