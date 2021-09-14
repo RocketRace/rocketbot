@@ -89,7 +89,9 @@ class Xkcd(commands.Cog):
     @tasks.loop(minutes=15)
     async def update_xkcd(self):
         '''Checks for a new XKCD and sends update DMs to all opted in'''
+        print("enter")
         async with self.bot.cursor() as cur:
+            print("insert on conflict")
             await cur.executemany(
                 '''
                     INSERT INTO users (id, xkcd_remind)
@@ -99,11 +101,14 @@ class Xkcd(commands.Cog):
                     ''',
                 self.cached_users.items()
             )
+            print("get")
             async with self.bot.session.get("https://xkcd.com/info.0.json") as resp:
                 data = json.loads(await resp.text())
             if data["num"] > self.latest_number:
+                print("notif")
                 await self.send_notifications(data["num"])
                 self.latest_number = data["num"]
+                print("stats")
                 await cur.execute(
                     '''
                     UPDATE stats SET last_xkcd = ?;
@@ -114,6 +119,7 @@ class Xkcd(commands.Cog):
     async def send_notifications(self, latest_number):
         '''Sends notifications to all who have been opted in'''
         async with self.bot.cursor() as cur:
+            print("get users")
             await cur.execute(
                 '''
                 SELECT id FROM users WHERE xkcd_remind = 1;
@@ -128,6 +134,7 @@ class Xkcd(commands.Cog):
                     # If `members` intent is enabled, `m = get_member(ID)` and `m.send(...)` may be used
                     channel = await self.bot.http.start_private_message(id) # type: ignore
                     chan_id = channel["id"]
+                    print("send")
                     await self.bot.http.send_message( # type: ignore
                         chan_id,
                         "\n".join([
