@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import re
 import string
+import unicodedata
 from typing import TYPE_CHECKING
 
 import discord
 from discord.ext import commands
-
-discord.Message
 
 if TYPE_CHECKING:
     from bot import Bot, Ctx
@@ -92,6 +91,29 @@ class Tools(commands.Cog):
                 # Not valid
                 except discord.HTTPException:
                     pass
+    
+    @commands.command(aliases=["charinfo", "char"])
+    async def chars(self, ctx: Ctx, *, string: str):
+        '''Return character info for a string'''
+        out = []
+        width = 4
+        for c in string:
+            num = f"{ord(c):x}"
+            if len(num) <= 2:
+                escape = f"\\x{num:0>2}"
+            elif len(num) <= 4:
+                escape = f"\\u{num:0>4}"
+                width = max(width, 6)
+            else:
+                escape = f"\\U{num:0>8}"
+                width = max(width, 10)
+            name = unicodedata.name(c, "<name missing>")
+            out.append(f"`{escape: <{width}}`: `{c}` `{name.upper()}`")
+        
+        result = "\n".join(out)
+        if len(result) > 2000:
+            return await ctx.boom("Result too long")
+        await ctx.send(result)
 
 def setup(bot: Bot):
     bot.add_cog(Tools(bot))

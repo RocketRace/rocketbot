@@ -25,6 +25,8 @@ class Shell(commands.Cog):
 
     def __init__(self, bot: Bot):
         self.bot = bot
+        
+        # Neofetch data
         with open("data/icons.json") as fp:
             self.distros: Dict[str, str] = json.load(fp)
         self.distro_names = [*self.distros.keys()]
