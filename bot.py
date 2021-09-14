@@ -83,6 +83,7 @@ class Bot(commands.Bot):
         print("Shutting down...")
         await self.session.close()
         await self.db.close()
+        await super().close()
 
     async def connect_sessions(self, *, db: str):
         self.db = await asqlite.connect(db) # type: ignore
