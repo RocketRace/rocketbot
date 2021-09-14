@@ -89,43 +89,25 @@ class Xkcd(commands.Cog):
     @tasks.loop(minutes=15)
     async def update_xkcd(self):
         '''Checks for a new XKCD and sends update DMs to all opted in'''
-        print("enter")
-        async with self.bot.cursor() as cur:
-            print("insert on conflict")
-            await cur.executemany(
+        async with self.bot.session.get("https://xkcd.com/info.0.json") as resp:
+            data = json.loads(await resp.text())
+        if data["num"] > self.latest_number:
+            await self.send_notifications(data["num"])
+            self.latest_number = data["num"]
+            await self.bot.db.execute(
                 '''
-                    INSERT INTO users (id, xkcd_remind)
-                    VALUES (?, ?)
-                    ON CONFLICT(id) DO UPDATE
-                    SET xkcd_remind = excluded.xkcd_remind;
-                    ''',
-                self.cached_users.items()
+                UPDATE stats SET last_xkcd = ?;
+                ''',
+                (data["num"],)
             )
-            print("get")
-            async with self.bot.session.get("https://xkcd.com/info.0.json") as resp:
-                data = json.loads(await resp.text())
-            if data["num"] > self.latest_number:
-                print("notif")
-                await self.send_notifications(data["num"])
-                self.latest_number = data["num"]
-                print("stats")
-                await cur.execute(
-                    '''
-                    UPDATE stats SET last_xkcd = ?;
-                    ''',
-                    (data["num"],)
-                )
 
     async def send_notifications(self, latest_number):
         '''Sends notifications to all who have been opted in'''
-        async with self.bot.cursor() as cur:
-            print("get users")
-            await cur.execute(
-                '''
-                SELECT id FROM users WHERE xkcd_remind = 1;
-                '''
-            )
-            rows = await cur.fetchall()
+        rows = await self.bot.db.fetchall(
+            '''
+            SELECT id FROM users WHERE xkcd_remind = 1;
+            '''
+        )
         for (id,) in rows:
             with contextlib.suppress(discord.Forbidden):
                 for num in range(self.latest_number + 1, latest_number + 1):
@@ -134,7 +116,6 @@ class Xkcd(commands.Cog):
                     # If `members` intent is enabled, `m = get_member(ID)` and `m.send(...)` may be used
                     channel = await self.bot.http.start_private_message(id) # type: ignore
                     chan_id = channel["id"]
-                    print("send")
                     await self.bot.http.send_message( # type: ignore
                         chan_id,
                         "\n".join([
@@ -196,15 +177,13 @@ class Xkcd(commands.Cog):
         if self.cached_users.get(ctx.author.id) is not None:
             result = self.cached_users[ctx.author.id]
         else:
-            async with ctx.cursor() as cur:
-                await cur.execute(
-                    '''
-                    SELECT xkcd_remind FROM users WHERE id = ?;
-                    ''',
-                    (ctx.author.id, )
-                )
-                fetch = await cur.fetchone()
-                result = False if fetch is None else fetch[0]
+            fetch = await self.bot.db.fetchone(
+                '''
+                SELECT xkcd_remind FROM users WHERE id = ?;
+                ''',
+                (ctx.author.id, )
+            )
+            result = False if fetch is None else fetch[0]
         self.cached_users[ctx.author.id] = result
         if result:
             await ctx.send("You are currently opted in to XKCD reminders.")
@@ -215,13 +194,29 @@ class Xkcd(commands.Cog):
     @opt.command(name="in")
     async def optin(self, ctx: Ctx):
         '''Opt in.'''
-        self.cached_users[ctx.author.id] = True
+        await self.bot.db.execute(
+            '''
+            INSERT INTO users (id, xkcd_remind)
+            VALUES (?, 1)
+            ON CONFLICT(id) DO UPDATE
+            SET xkcd_remind = excluded.xkcd_remind;
+            ''',
+            ctx.author.id
+        )
         await ctx.send("You were opted in to XKCD reminders.")
 
     @opt.command(name="out")
     async def optout(self, ctx: Ctx):
         '''Opt out.'''
-        self.cached_users[ctx.author.id] = False
+        await self.bot.db.execute(
+            '''
+            INSERT INTO users (id, xkcd_remind)
+            VALUES (?, 0)
+            ON CONFLICT(id) DO UPDATE
+            SET xkcd_remind = excluded.xkcd_remind;
+            ''',
+            ctx.author.id
+        )
         await ctx.send("You were opted out from XKCD reminders.")
 
 def setup(bot: Bot):
