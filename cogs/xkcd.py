@@ -84,7 +84,7 @@ class Xkcd(commands.Cog):
 
     def cog_unload(self):
         if self.update_xkcd.is_running():
-            self.update_xkcd.stop()
+            self.update_xkcd.cancel()
 
     @tasks.loop(minutes=15)
     async def update_xkcd(self):

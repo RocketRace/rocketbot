@@ -80,6 +80,7 @@ class Bot(commands.Bot):
         self.loop.create_task(self.connect_sessions(db=db))
     
     async def close(self):
+        print("Shutting down...")
         await self.session.close()
         await self.db.close()
 

@@ -7,7 +7,7 @@ import contextlib
 import json
 import random as r
 from datetime import datetime
-from random import randint
+from random import choice, randint
 from typing import TYPE_CHECKING, Dict, Optional
 
 import discord
@@ -73,6 +73,16 @@ class Shell(commands.Cog):
             "Sawfish","sithWM","spectrwm","steamcompmgr","StumpWM","twm",
             "WMFS","Window Maker","Wingo","wmii","Xfwm","xmonad","uwm",
             "Quartz Compositor","No WM Necessary"
+        )
+
+        # Bottom data
+        self.bottom_emoji = (
+            "\U0001f496", # sparkling heart
+            "\U0001f97a", # pleading
+            "\U0001fac2", # hugging
+            "\U0001f449\U0001f448", # point
+            "\u2728", # sparkles
+            ",,,", # ,,,
         )
 
     @commands.command()
@@ -153,6 +163,44 @@ class Shell(commands.Cog):
                     with contextlib.suppress(discord.Forbidden):
                         await m.delete()
                 break
+
+    @commands.command()
+    async def bottom(self, ctx: Ctx):
+        '''Displays process information'''
+        
+        header = []
+        
+        # Processes
+        proc_count = randint(100, 10000)
+        running_procs = randint(0, proc_count // 2)
+        sleeping_procs = proc_count - running_procs
+        threads = proc_count * randint(1, 10) + randint(0, 1000)
+        header.append(f"Processes: {proc_count} total, {running_procs} running, {sleeping_procs} sleeping, {threads} threads")
+        # Date and time
+        header.append(datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S"))
+        # Load average (this one is bogus even in the real program)
+        header.append(f"Load avg: {randint(0, 400) / 100}, {randint(0, 1000) / 100}, {randint(0, 200) / 100}")
+        # CPU usage
+        cpu_usage = randint(0, 10000)
+        user_cpu = randint(0, cpu_usage)
+        sys_cpu = cpu_usage - user_cpu
+        idle_cpu = 10000 - cpu_usage
+        header.append(f"CPU usage: {user_cpu / 100}% user, {sys_cpu / 100}% system, {idle_cpu / 100}% idle")
+        # Shared libraries
+        header.append(f"SharedLibs: {randint(100, 1000)}M resident, {randint(10, 200)}M data, {randint(20, 400)}M linkedit.")
+        # Memory regions
+        header.append(f"MemRegions: {randint(1000, 1000000)} total, {randint(100, 9000)}M resident, {randint(20, 400)}M private, {randint(20, 8000)}M shared.")
+        # Physical memory
+        memory = 2 ** randint(1, 16)
+        unit_i = randint(1, 3)
+        unit = "KMGT"[unit_i]
+        next_unit = "KMGT"[unit_i - 1]
+        header.append(f"PhysMem: {memory}{unit} used ({randint(1, 2000)}{next_unit} wired), {randint(1, 2000)}{next_unit} unused.")
+        # VM
+        # Networks
+        # Disks
+        print("\n".join(header))
+
 
 def setup(bot: Bot):
     bot.add_cog(Shell(bot))
