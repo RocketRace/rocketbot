@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
-import random as r
-from datetime import datetime
-from random import choice, randint
-from typing import TYPE_CHECKING, Dict, Optional
+from datetime import datetime, timedelta
+from random import choice, choices, gauss, randint, random, shuffle
+from typing import TYPE_CHECKING, Dict, Optional, TypeVar
 
 import discord
 from discord.ext import commands
@@ -19,6 +19,148 @@ if TYPE_CHECKING:
     from bot import Bot, Ctx
 else:
     Ctx = commands.Context
+
+def to_bottom(string: str, length: int, blanks: bool = False) -> str:
+    '''The official specification gives too much verbosity'''
+    units = [
+        ",", # ,
+        "\U0001f97a", # plead
+        "\U0001fac2", # hug
+        "\u2728", # sparkle
+        "\U0001f449\U0001f448", # point
+        "\U0001f496", # sparkling heart
+        ",", # , again
+        "\U0001f97a", # plead again
+        "",
+        "",
+    ]
+    # This picks [length] bytes from the hash and only picks the 
+    # bottom 3 bits from each byte - plenty of fun collisions
+    return "{:.>{length}}".format("".join(
+        units[((value & 0b1110) >> 1) + 2 * blanks] 
+        for value in hashlib.sha1(
+            string.encode("utf-8"),
+            usedforsecurity=False
+        ).digest()[:length]
+    )[:length] or "\U0001f97a", length=length).replace(",", ",,")
+
+def keysmash(length: int, energy: float) -> str:
+    '''No I will not elaborate'''
+    keymap_qwerty_us = [
+        "1234567890-",
+        "qwertyuiop[",
+        "asdfghjkl;'",
+        "zxcvbnm,.//", 
+        "           ", 
+        # the last slash is not accurate but it's very rarely hit so it's fine
+    ]
+    # the keysmash, on a physical keyboard, operates on the following behaviors:
+    # - wrist placement stays roughly constant
+    # - the more energy exerted, the greater distance the fingers will travel
+    # from their rest position
+    #
+    # there are four primary movements:
+    #
+    # - the "hammer", using all fingers as a single unit around their hover points.
+    # energy makes little of a difference here (the thumb may sometimes be omitted)
+    #
+    # low-energy example: asfljsd fljsd lkj;sd alkj
+    # high-energy example: as fjksdfa ljsdf ajlds fl;
+    #
+    # - the "swing", alternating between the index finger, thumb, and the other fingers 
+    # operating together as one unit (the thumb may sometimes be omitted)
+    #
+    # low-energy example: jfioewjfo; js;f djiso;f jwio;f jewiofj owi;aejf
+    # high-energy example: sfdjskf fp jioewj feqjf xoquj p0 ujt290
+    #
+    # - the "wave", a motion across the fingers propagating outwards
+    # low-energy example: fjdsakl;fj sdkl;f jsdakl
+    # high-energy example: fjdsal; fhiewo[ jfiewoj iwo jfwio
+    #
+    # - the "flop", flattening the hands around the point of contact
+    # by the joints
+    # low-energy example: asfjdkslafj,xcnad,vkjsn
+    # high-energy example: adsasdjkf.kszvkfjh.waeg,f-dk.;_nj
+    #
+    # - the "drill peck", where (usually) the index finger scatters around the keyboard
+    # low-energy example: dhssdkfjdjwif
+    # high-energy example: ajsgbei3eusjflrfolwsjdxna
+    #
+    # each of these methods may be performed with one or both hands
+
+    layouts = [keymap_qwerty_us]
+    # I only implemented these because I'm boring
+    methods = [hammer, drill_peck]
+
+    method = choice(methods)
+    layout = choice(layouts)
+    string = "".join(layout[y][x] for x, y in method(energy))
+    return string[:length]
+
+_T = TypeVar("_T", bound=float)
+def minmax(n: _T, minimum: _T, maximum: _T) -> _T:
+    return min(maximum, max(minimum, n))
+
+def drill_peck(energy: float) -> list[tuple[int, int]]:
+    out: list[tuple[int, int]] = []
+    right_hand = random() < 0.8
+    l_x, l_y = 1.5, 2
+    r_x, r_y = 6.5, 2
+    for _ in range(20):
+        dx = (random() * 3 - 2) * (energy)
+        dy = (random() - 0.75) * energy
+        x, y = minmax(round(l_x + dx), 0, 9), minmax(round(l_y + dy), 0, 2)
+        out.append((x, y))
+        if right_hand:
+            dx = (random() * 3 - 2) * (energy)
+            dy = (random() - 0.75) * energy
+            x, y = minmax(round(r_x + dx), 0, 9), minmax(round(r_y + dy), 0, 2)
+            out.append((x, y))
+    return out
+
+def hammer(_energy: float) -> list[tuple[int, int]]:
+    keys_pressed: list[tuple[float, tuple[int, int]]] = []
+    left_hand = True
+    right_hand = random() < 0.8
+    thumbless = random() < 0.5
+    if left_hand:
+        # x, y
+        positions = [
+            (3, 4), (3, 2), (2, 2), (1, 2), (0, 2)
+        ]
+        time = 0
+        for _ in range(5):
+            fingers = [0, 1, 2, 3, 4]
+            shuffle(fingers)
+            for finger in fingers:
+                keys_pressed.append((time, positions[finger]))
+                time += random() * 0.025
+            time += gauss(0.5, 0.125)   
+    if right_hand:
+        # x, y
+        time = gauss(0.5, 0.25)
+        positions = [
+            (6, 4), (6, 2), (7, 2), (8, 2), (9, 2)
+        ]
+        for _ in range(5):
+            fingers = [0, 1, 2, 3, 4]
+            shuffle(fingers)
+            for finger in fingers:
+                keys_pressed.append((time, positions[finger]))
+                time += random() * 0.025
+            time += gauss(0.5, 0.125)
+    keys_pressed.sort()
+    # remove consecutive spaces
+    last = (-1, -1)
+    for i, (_, pos) in enumerate(keys_pressed):
+        if last[1] == 4 and pos[1] == 4:
+            del keys_pressed[i]
+        last = pos
+
+    if thumbless:
+        return [pos for _, pos in keys_pressed if pos[1] != 4]
+    else:
+        return [pos for _, pos in keys_pressed]
 
 class Shell(commands.Cog):
     '''Assorted shell commands'''
@@ -75,16 +217,6 @@ class Shell(commands.Cog):
             "Quartz Compositor","No WM Necessary"
         )
 
-        # Bottom data
-        self.bottom_emoji = (
-            "\U0001f496", # sparkling heart
-            "\U0001f97a", # pleading
-            "\U0001fac2", # hugging
-            "\U0001f449\U0001f448", # point
-            "\u2728", # sparkles
-            ",,,", # ,,,
-        )
-
     @commands.command()
     async def neofetch(self, ctx: Ctx, *, distro: Optional[str] = None):
         '''Shows the user's system information.'''
@@ -93,14 +225,14 @@ class Shell(commands.Cog):
         else:
             title = f"{ctx.author.display_name} @ Direct Message"
         if distro is None:
-            distro_name = r.choice(self.distro_names)
+            distro_name = choice(self.distro_names)
         elif distro not in self.lower_distros:
             return await ctx.boom(
                 f"Distro `{distro}` not found."
             )
         else:
             distro_name = self.lower_distros[distro]
-        pacmans = set(r.choices(self.package_managers, k=r.randint(1, 3)))
+        pacmans = set(choices(self.package_managers, k=randint(1, 3)))
         if ctx.guild:
             host = "Host: " + ctx.guild.name
         else:
@@ -108,15 +240,15 @@ class Shell(commands.Cog):
         fields = [
             title,
             len(title) * "-",
-            f"OS: {distro_name} v{r.randint(0,4)}.{r.randint(0,16)}.{r.randint(0,256)} {r.choice(self.instruction_sets)}",
+            f"OS: {distro_name} v{randint(0,4)}.{randint(0,16)}.{randint(0,256)} {choice(self.instruction_sets)}",
             host,
-            f"Kernel: {r.randint(0,32)}.{r.randint(0,8)}.{r.randint(0,3)}",
+            f"Kernel: {randint(0,32)}.{randint(0,8)}.{randint(0,3)}",
             "Uptime: " + utils.humanize_duration(datetime.utcnow() - self.bot.start_time),
-            f"Packages: {r.randint(0, 1024)} ({', '.join(pacmans)})",
-            f"Shell: {r.choice(self.shhh)} {r.randint(0,8)}.{r.randint(0,4)}.{r.randint(0,24)}",
+            f"Packages: {randint(0, 1024)} ({', '.join(pacmans)})",
+            f"Shell: {choice(self.shhh)} {randint(0,8)}.{randint(0,4)}.{randint(0,24)}",
             f"Resolution: {2**randint(0,12) * 3**randint(0,2)}x{2**randint(0,10) * 3**randint(0,3)}",
-            "DE: " + r.choice(self.des),
-            "WM: " + r.choice(self.wms),
+            "DE: " + choice(self.des),
+            "WM: " + choice(self.wms),
             "Terminal: Discord"
         ]
         # This uses an embed because it allows the code blocks to be scaled better, and provides a better 
@@ -164,43 +296,46 @@ class Shell(commands.Cog):
                         await m.delete()
                 break
 
-    # @commands.command()
+    @commands.command()
     async def bottom(self, ctx: Ctx):
         '''Displays process information'''
-        
-        header = []
-        
-        # Processes
-        proc_count = randint(100, 10000)
-        running_procs = randint(0, proc_count // 2)
-        sleeping_procs = proc_count - running_procs
-        threads = proc_count * randint(1, 10) + randint(0, 1000)
-        header.append(f"Processes: {proc_count} total, {running_procs} running, {sleeping_procs} sleeping, {threads} threads")
-        # Date and time
-        header.append(datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S"))
-        # Load average (this one is bogus even in the real program)
-        header.append(f"Load avg: {randint(0, 400) / 100}, {randint(0, 1000) / 100}, {randint(0, 200) / 100}")
-        # CPU usage
-        cpu_usage = randint(0, 10000)
-        user_cpu = randint(0, cpu_usage)
-        sys_cpu = cpu_usage - user_cpu
-        idle_cpu = 10000 - cpu_usage
-        header.append(f"CPU usage: {user_cpu / 100}% user, {sys_cpu / 100}% system, {idle_cpu / 100}% idle")
-        # Shared libraries
-        header.append(f"SharedLibs: {randint(100, 1000)}M resident, {randint(10, 200)}M data, {randint(20, 400)}M linkedit.")
-        # Memory regions
-        header.append(f"MemRegions: {randint(1000, 1000000)} total, {randint(100, 9000)}M resident, {randint(20, 400)}M private, {randint(20, 8000)}M shared.")
-        # Physical memory
-        memory = 2 ** randint(1, 16)
-        unit_i = randint(1, 3)
-        unit = "KMGT"[unit_i]
-        next_unit = "KMGT"[unit_i - 1]
-        header.append(f"PhysMem: {memory}{unit} used ({randint(1, 2000)}{next_unit} wired), {randint(1, 2000)}{next_unit} unused.")
-        # VM
-        # Networks
-        # Disks
-        print("\n".join(header))
+        uptime = to_bottom(str(self.bot.start_time -  datetime.utcnow()), 5)
+        load = to_bottom(str(random()), 6)
+        tasks = to_bottom(str(random()), 20)
+        cpus = to_bottom(str(random()), 19)
+        mems = to_bottom(str(random()), 19)
+        swap = to_bottom(str(random()), 19)
+        users = ["root", "olivia", "bee"]
+        commands = ["neofetch", "rm", "cargo", "man", "python2", "python2.6", "tmux", "sudo"]
+        out = [
+            "```",
+            f"bottom - up {uptime}, load average: {load}",
+            f"Tasks: {tasks}",
+            f"%Cpu(s): {cpus}",
+            f"MiB Mem: {mems}",
+            f"MiB Swap: {swap}",
+            "",
+            "  PID      USER    %CPU    %MEM     TIME    COMMAND"
+        ]
+        for _ in range(10):
+            pid = str(randint(0, 20000))
+            user = choice(users)
+            cpu = str(random() * 100)
+            mem = str(random() * 100)
+            time = str(timedelta(seconds=randint(0, 100000)))
+            command = choice(commands)
+            out.append(
+                f"{to_bottom(pid, 3, True)}."
+                f"{to_bottom(user, 3, True)}."
+                f"{to_bottom(cpu, 3, True)}."
+                f"{to_bottom(mem, 3, True)}."
+                f"{to_bottom(time, 3, True)}."
+                f"{to_bottom(command, 4, True)}.".replace(".", "  ")
+            )
 
+        out.append("```")
+        await ctx.send(embed=discord.Embed(description="\n".join(out)))
+        
 
 def setup(bot: Bot):
     bot.add_cog(Shell(bot))
