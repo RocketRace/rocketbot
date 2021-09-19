@@ -94,19 +94,19 @@ def keysmash(length: int, energy: float) -> str:
 
     method = choice(methods)
     layout = choice(layouts)
-    string = "".join(layout[y][x] for x, y in method(energy))
+    string = "".join(layout[y][x] for x, y in method(length, energy))
     return string[:length]
 
 _T = TypeVar("_T", bound=float)
 def minmax(n: _T, minimum: _T, maximum: _T) -> _T:
     return min(maximum, max(minimum, n))
 
-def drill_peck(energy: float) -> list[tuple[int, int]]:
+def drill_peck(length: int, energy: float) -> list[tuple[int, int]]:
     out: list[tuple[int, int]] = []
     right_hand = random() < 0.8
     l_x, l_y = 1.5, 2
     r_x, r_y = 6.5, 2
-    for _ in range(20):
+    for _ in range(length):
         dx = (random() * 3 - 2) * (energy)
         dy = (random() - 0.75) * energy
         x, y = minmax(round(l_x + dx), 0, 9), minmax(round(l_y + dy), 0, 2)
@@ -118,18 +118,18 @@ def drill_peck(energy: float) -> list[tuple[int, int]]:
             out.append((x, y))
     return out
 
-def hammer(_energy: float) -> list[tuple[int, int]]:
+def hammer(length: int, _energy: float) -> list[tuple[int, int]]:
     keys_pressed: list[tuple[float, tuple[int, int]]] = []
     left_hand = True
     right_hand = random() < 0.8
-    thumbless = random() < 0.5
+    thumbless = random() < 0.4
     if left_hand:
         # x, y
         positions = [
             (3, 4), (3, 2), (2, 2), (1, 2), (0, 2)
         ]
         time = 0
-        for _ in range(5):
+        for _ in range(1 + length // 4):
             fingers = [0, 1, 2, 3, 4]
             shuffle(fingers)
             for finger in fingers:
@@ -138,11 +138,11 @@ def hammer(_energy: float) -> list[tuple[int, int]]:
             time += gauss(0.5, 0.125)   
     if right_hand:
         # x, y
-        time = gauss(0.5, 0.25)
+        time = max(0.0, gauss(0.125, 0.125))
         positions = [
             (6, 4), (6, 2), (7, 2), (8, 2), (9, 2)
         ]
-        for _ in range(5):
+        for _ in range(1 + length // 4):
             fingers = [0, 1, 2, 3, 4]
             shuffle(fingers)
             for finger in fingers:
@@ -297,16 +297,16 @@ class Shell(commands.Cog):
                 break
 
     @commands.command()
-    async def bottom(self, ctx: Ctx):
+    async def bottom(self, ctx: Ctx, bottomness: str = ""):
         '''Displays process information'''
-        uptime = to_bottom(str(self.bot.start_time -  datetime.utcnow()), 5)
-        load = to_bottom(str(random()), 6)
-        tasks = to_bottom(str(random()), 20)
-        cpus = to_bottom(str(random()), 19)
-        mems = to_bottom(str(random()), 19)
-        swap = to_bottom(str(random()), 19)
-        users = ["root", "olivia", "bee"]
-        commands = ["neofetch", "rm", "cargo", "man", "python2", "python2.6", "tmux", "sudo"]
+        count = len([x for x in bottomness if x == ","])
+        energy = 1.0 - 0.4 ** (count + 1)
+        uptime = keysmash(8, energy)
+        load = keysmash(10, energy)
+        tasks = keysmash(39, energy)
+        cpus = keysmash(37, energy)
+        mems = keysmash(37, energy)
+        swap = keysmash(36, energy)
         out = [
             "```",
             f"bottom - up {uptime}, load average: {load}",
@@ -315,22 +315,19 @@ class Shell(commands.Cog):
             f"MiB Mem: {mems}",
             f"MiB Swap: {swap}",
             "",
-            "  PID      USER    %CPU    %MEM     TIME    COMMAND"
+            "   PID      USER  %CPU  %MEM  TIME     COMMAND"
         ]
+        pids = [keysmash(x, energy) for x in (4, 5, 6) * 20]
+        users = [keysmash(x, energy) for x in (6, 7, 8)]
+        commands = [keysmash(x, energy) for x in (7, 8, 9, 10) * 20]
         for _ in range(10):
-            pid = str(randint(0, 20000))
-            user = choice(users)
-            cpu = str(random() * 100)
-            mem = str(random() * 100)
-            time = str(timedelta(seconds=randint(0, 100000)))
-            command = choice(commands)
             out.append(
-                f"{to_bottom(pid, 3, True)}."
-                f"{to_bottom(user, 3, True)}."
-                f"{to_bottom(cpu, 3, True)}."
-                f"{to_bottom(mem, 3, True)}."
-                f"{to_bottom(time, 3, True)}."
-                f"{to_bottom(command, 4, True)}.".replace(".", "  ")
+                f"{choice(pids): >6}  "
+                f"{choice(users): >8}  "
+                f" {keysmash(3, energy)}  "
+                f" {keysmash(3, energy)}  "
+                f"{keysmash(4, energy)}  "
+                f"{choice(commands): >10}"
             )
 
         out.append("```")
