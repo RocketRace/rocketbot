@@ -301,12 +301,12 @@ class Shell(commands.Cog):
         '''Displays process information'''
         count = len([x for x in bottomness if x == ","])
         energy = 1.0 - 0.4 ** (count + 1)
-        uptime = keysmash(8, energy)
-        load = keysmash(10, energy)
-        tasks = keysmash(39, energy)
-        cpus = keysmash(37, energy)
-        mems = keysmash(37, energy)
-        swap = keysmash(36, energy)
+        uptime = to_bottom(str(random()), 5)
+        load = to_bottom(str(random()), 6)
+        tasks = keysmash(44, energy)
+        cpus = keysmash(42, energy)
+        mems = keysmash(42, energy)
+        swap = keysmash(41, energy)
         out = [
             "```",
             f"bottom - up {uptime}, load average: {load}",
@@ -315,19 +315,18 @@ class Shell(commands.Cog):
             f"MiB Mem: {mems}",
             f"MiB Swap: {swap}",
             "",
-            "   PID      USER  %CPU  %MEM  TIME     COMMAND"
+            "   PID    USER    %CPU    %MEM    TIME     COMMAND"
         ]
-        pids = [keysmash(x, energy) for x in (4, 5, 6) * 20]
-        users = [keysmash(x, energy) for x in (6, 7, 8)]
+        users = [keysmash(x, energy) for x in (4, 5, 6)]
         commands = [keysmash(x, energy) for x in (7, 8, 9, 10) * 20]
         for _ in range(10):
             out.append(
-                f"{choice(pids): >6}  "
-                f"{choice(users): >8}  "
-                f" {keysmash(3, energy)}  "
-                f" {keysmash(3, energy)}  "
-                f"{keysmash(4, energy)}  "
-                f"{choice(commands): >10}"
+                f"{to_bottom(str(randint(0, 200000)), 3, True)}  "
+                f"{choice(users): >6}  "
+                f"{to_bottom(str(random()), 3, True)}  "
+                f"{to_bottom(str(random()), 3, True)}  "
+                f"{to_bottom(str(random()), 3, True)}  "
+                f"{choice(commands): >10}".replace(".", "  ")
             )
 
         out.append("```")
