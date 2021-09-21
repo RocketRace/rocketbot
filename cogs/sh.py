@@ -6,15 +6,12 @@ import asyncio
 import contextlib
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from random import choice, choices, gauss, randint, random, shuffle
 from typing import TYPE_CHECKING, Dict, Optional, TypeVar, Union
 
 import discord
 from discord.ext import commands
-from discord.message import Message
-
-from discord.member import Member
 
 from . import utils
 

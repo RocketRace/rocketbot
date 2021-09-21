@@ -5,7 +5,7 @@ import contextlib
 import datetime
 import json
 import random
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import discord
 from discord.ext import menus  # type: ignore
