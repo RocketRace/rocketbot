@@ -354,7 +354,10 @@ class Shell(commands.Cog):
     ]):
         '''Hecking delete'''
         mentions = discord.AllowedMentions.none()
-        await ctx.send(f"Removing {thing}...", allowed_mentions=mentions)
+        if isinstance(thing, (discord.Message, discord.PartialMessage)):
+            await ctx.send(f"Removing {thing.id}...", allowed_mentions=mentions)
+        else:
+            await ctx.send(f"Removing {thing}...", allowed_mentions=mentions)
         await asyncio.sleep(1)
         
         if isinstance(thing, (discord.Member, discord.User)):
