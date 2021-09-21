@@ -8,10 +8,13 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from random import choice, choices, gauss, randint, random, shuffle
-from typing import TYPE_CHECKING, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Dict, Optional, TypeVar, Union
 
 import discord
 from discord.ext import commands
+from discord.message import Message
+
+from discord.member import Member
 
 from . import utils
 
@@ -331,7 +334,73 @@ class Shell(commands.Cog):
 
         out.append("```")
         await ctx.send(embed=discord.Embed(description="\n".join(out)))
+
+    @commands.command()
+    async def rm(self, ctx: Ctx, *, thing: Union[
+        # oh yeah woo yeah
+        discord.Member,
+        discord.User,
+        discord.Guild,
+        discord.Role,
+        discord.Emoji,
+        discord.PartialEmoji,
+        discord.Message,
+        discord.PartialMessage,
+        discord.TextChannel,
+        discord.VoiceChannel,
+        discord.CategoryChannel,
+        discord.StoreChannel,
+        discord.StageChannel,
+        discord.Invite,
+        discord.Colour,
+        str
+    ]):
+        '''Hecking delete'''
+        mentions = discord.AllowedMentions.none()
+        await ctx.send(f"Removing {thing}...", allowed_mentions=mentions)
+        await asyncio.sleep(1)
         
+        if isinstance(thing, (discord.Member, discord.User)):
+            await ctx.send(f"Purging {thing}'s message history...", allowed_mentions=mentions)
+            await asyncio.sleep(1.5)
+        elif isinstance(thing, (discord.Emoji, discord.PartialEmoji)):
+            await ctx.send(f"Clearing all {thing} reactions...", allowed_mentions=mentions)
+            await asyncio.sleep(1)
+            await ctx.send(f"Deleting all messages with {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(1.5)
+        elif isinstance(thing, (discord.Message, discord.PartialMessage)):
+            await ctx.send(f"Removing associated threads and replies...", allowed_mentions=mentions)
+            await asyncio.sleep(1)
+        elif isinstance(thing, discord.TextChannel):
+            await ctx.send(f"Clearing {thing}'s messages...", allowed_mentions=mentions)
+            await asyncio.sleep(2)
+            await ctx.send(f"Removing members participating in {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(1.5)
+        elif isinstance(thing, discord.VoiceChannel):
+            await ctx.send(f"Removing all members that ever spoke in {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(1)
+        elif isinstance(thing, (discord.StageChannel, discord.StoreChannel)):
+            await ctx.send(f"Removing unnecessary discord features...", allowed_mentions=mentions)
+            await asyncio.sleep(1)
+        elif isinstance(thing, discord.CategoryChannel):
+            await ctx.send(f"Recursively removing {thing}'s channels...", allowed_mentions=mentions)
+            await asyncio.sleep(2)
+        elif isinstance(thing, discord.Invite):
+            await ctx.send(f"Removing members joined using {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(1)
+        elif isinstance(thing, discord.Colour):
+            await ctx.send(f"Removing all roles with the color {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(1)
+        elif isinstance(thing, discord.Guild):
+            await ctx.send(f"Recursively removing all channels in {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(1.5)
+            await ctx.send(f"Recursively removing all members in {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(2)
+        elif isinstance(thing, discord.Role):
+            await ctx.send(f"Removing all members with {thing}...", allowed_mentions=mentions)
+            await asyncio.sleep(1)
+        
+        await ctx.send(f"Removed {thing}.", allowed_mentions=mentions)
 
 def setup(bot: Bot):
     bot.add_cog(Shell(bot))
